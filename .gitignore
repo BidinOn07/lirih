@@ -63,3 +63,5 @@ service-account*.json
 /ignore/
 /docs/
 
+
+.vscode/templates

@@ -13,21 +13,26 @@ Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan pen
 
 | Paket | Lisensi | OSI | Sumber |
 |---|---|---|---|
-| `melodic_audio` *(plugin buatan sendiri)* | MIT | ✅ | repositori ini |
+| `lirih_audio` *(plugin buatan sendiri)* | MIT | ✅ | repositori ini — nama dikunci task 0N.4 (6 Okt 2026); kodenya dibuat pada task 0.6/0.8 |
 | `flutter_riverpod` 3.4.3 | **MIT** | ✅ | github.com/rrousselGit/riverpod |
 | `riverpod_annotation` 4.0.7 | **MIT** | ✅ | github.com/rrousselGit/riverpod |
 | `freezed_annotation` 3.1.0 | **MIT** | ✅ | github.com/rrousselGit/freezed |
 | `json_annotation` 4.12.0 | **BSD-3-Clause** | ✅ | github.com/google/json_serializable.dart |
 | `go_router` 18.0.2 | **BSD-3-Clause** | ✅ | github.com/flutter/packages |
-| `hive` 2.2.3 | **Apache-2.0** | ✅ | github.com/hivedb/hive |
-| `hive_flutter` 1.1.0 | **Apache-2.0** | ✅ | github.com/hivedb/hive |
+| `hive_ce` 2.20.1 | **BSD-3-Clause** + **Apache-2.0** | ✅ | github.com/IO-Design-Team/hive_ce |
+| `hive_ce_flutter` 2.4.0 | **BSD-3-Clause** + **Apache-2.0** | ✅ | github.com/IO-Design-Team/hive_ce |
 | `audio_service` 0.18.19 | **MIT** | ✅ | github.com/ryanheise/audio_service |
 | `on_audio_query` 2.9.0 | **BSD-3-Clause** | ✅ | github.com/LucJosin/on_audio_query |
 | `permission_handler` 13.0.2 | **MIT** | ✅ | github.com/baseflow/flutter-permission-handler |
 | `dartz` 0.10.1 | **MIT** | ✅ | github.com/spebbe/dartz |
 | `plugin_platform_interface` 2.1.8 | **BSD-3-Clause** | ✅ | github.com/flutter/packages |
 
-> **Catatan:** `hive` dan `hive_flutter` ditandai `license:unknown` di pub.dev, tetapi berkas `LICENSE` di kedua repositori jelas berisi **Apache License 2.0** — nilai inilah yang dipakai.
+> **Catatan — `hive_ce`:** berkas `LICENSE` (cabang `main`) berisi **dua lisensi berurutan**, dipisah garis `====`:
+> 1. baris 0–11 → **BSD-3-Clause**, *Copyright 2025 Aaron DeLory* (kontribusi fork `hive_ce`)
+> 2. baris 14–211 → **Apache License 2.0**, lampiran *Copyright 2019 Simon Leier* (kode asli Hive)
+>
+> Karena itu keduanya dicantumkan. Tidak ada file `NOTICE` di seluruh repo (`/NOTICE` dan `/hive/NOTICE` → 404), sehingga kewajiban NOTICE pada Apache-2.0 **tidak berlaku**.
+> *(Selisih ini sebelumnya tercatat di bagian 5; kini sudah diverifikasi dan diselesaikan — 6 Okt 2026.)*
 
 ---
 
@@ -59,10 +64,9 @@ Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan pen
 | `freezed` 4.0.2 | MIT |
 | `json_serializable` 6.14.1 | BSD-3-Clause |
 | `riverpod_generator` 4.0.9 | MIT |
-| `hive_generator` 2.0.1 | Apache-2.0 |
+| `hive_ce_generator` 1.11.3 | BSD-3-Clause + Apache-2.0 |
 | `very_good_analysis` 11.0.0 | MIT |
 | `mocktail` 1.0.5 | MIT |
-| `integration_test` | BSD-3-Clause *(Flutter SDK)* |
 | **Flutter / Dart SDK** | BSD-3-Clause |
 
 ---
@@ -79,8 +83,8 @@ Dicatat agar jelas mengapa tidak muncul di daftar di atas:
 
 > Bila salah satunya diaktifkan untuk versi mendatang, **tambahkan kembali ke bagian 1** dan perbarui Privacy Policy.
 
-### Alternatif penyimpanan: `hive_ce` 2.20.1
-Berkas `LICENSE` di repositorinya berisi teks **BSD-3-Clause**, sedangkan tag pub.dev menandai **Apache-2.0**. **Verifikasi ulang sebelum memakainya** — dan perbarui tabel ini bila mengganti `hive` dengan `hive_ce`.
+### Penyimpanan lokal: `hive` → `hive_ce` (selesai, 6 Okt 2026)
+`hive_generator` 2.0.1 mengunci `analyzer <7.0.0` sedangkan `riverpod_generator` 4.x menuntut `analyzer ≥7.3.0` — keduanya tidak bisa terpasang bersama. Selain itu `hive` 2.2.3 masih menyatakan `sdk >=2.12.0 <3.0.0`, padahal proyek ini memakai **Dart 3.13**. Karena itu `hive` diganti **`hive_ce` 2.20.1** (`sdk ^3.4.0`) beserta `hive_ce_flutter` 2.4.0 dan `hive_ce_generator` 1.11.3 (`analyzer ^14.0.0`). Lisensinya sudah diverifikasi di bagian 1.
 
 ---
 
