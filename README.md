@@ -66,9 +66,8 @@ flutter build appbundle --release   # → build/app/outputs/bundle/release/app-r
 |---|---|
 | [`PRIVACY-POLICY.md`](PRIVACY-POLICY.md) | Kebijakan privasi — **wajib untuk Google Play** |
 | [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) | Atribusi lisensi dependensi (task R9) |
-| [`MelodicDSP-Technical-Design-Doc.md`](MelodicDSP-Technical-Design-Doc.md) | Desain teknis *(read-only)* |
 
-> Dokumen perencanaan internal (roadmap, checklist, clearance, listing, guide) sengaja **tidak diterbitkan** di repo ini.
+> Dokumen perencanaan internal (roadmap, checklist, **desain teknis**, clearance, listing, guide) sengaja **tidak diterbitkan** di repo ini.
 
 ---
 

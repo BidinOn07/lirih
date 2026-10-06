@@ -43,3 +43,26 @@ flutter:
   # Ikon Material bawaan dipakai untuk ikon player sementara
   # (ikon final = buatan sendiri, task 0N.5)
   uses-material-design: true
+
+  # ── Aset ───────────────────────────────────────────────────────
+  assets:
+    # Lisensi font ikut terbundel ke APK — kewajiban OFL-1.1 (task R9)
+    - assets/fonts/OFL-PlusJakartaSans.txt
+
+  # ── Tipografi (task 0N.7) ─────────────────────────────────────
+  # Plus Jakarta Sans — OFL-1.1, dirancang Tokotype (foundry Indonesia).
+  # Dibundel sebagai berkas lokal BUKAN diunduh saat runtime, karena
+  # aplikasi ini sengaja tanpa permission INTERNET.
+  # Larangan task 0N.7 terpenuhi: BUKAN font Circular.
+  # Lisensi penuh: assets/fonts/OFL-PlusJakartaSans.txt (task R9)
+  fonts:
+    - family: Plus Jakarta Sans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700

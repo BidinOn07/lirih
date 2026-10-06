@@ -26,6 +26,7 @@ Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan pen
 | `permission_handler` 13.0.2 | **MIT** | ✅ | github.com/baseflow/flutter-permission-handler |
 | `dartz` 0.10.1 | **MIT** | ✅ | github.com/spebbe/dartz |
 | `plugin_platform_interface` 2.1.8 | **BSD-3-Clause** | ✅ | github.com/flutter/packages |
+| `Plus Jakarta Sans` (4 bobot, **dibundel** di `assets/fonts/`) | **OFL-1.1** | ✅ | github.com/tokotype/PlusJakartaSans |
 
 > **Catatan — `hive_ce`:** berkas `LICENSE` (cabang `main`) berisi **dua lisensi berurutan**, dipisah garis `====`:
 > 1. baris 0–11 → **BSD-3-Clause**, *Copyright 2025 Aaron DeLory* (kontribusi fork `hive_ce`)
@@ -117,6 +118,7 @@ showAboutDialog(
 | **MIT** | Sertakan **pemberitahuan hak cipta** (copyright notice) asli |
 | **BSD-3-Clause** | Sertakan **copyright notice** + **daftar syarat** (3 klausul) apa adanya |
 | **Apache-2.0** | Sertakan **NOTICE** bila ada, cantumkan **perubahan yang dilakukan**, dan lisensikan ulang dengan lisensi yang sama |
+| **OFL-1.1** | Sertakan **copyright notice** + **salinan lisensi penuh** bersama berkas font. Font boleh didistribusikan bersama perangkat lunak, tetapi **tidak boleh dijual sendirian** |
 
 > ⚠️ Bila ada modifikasi pada kode pihak ketiga (mis. pada `PitchAudioProcessor` yang diturunkan dari Media3), **wajib ditandai di sini** sebagai modifikasi.
 
