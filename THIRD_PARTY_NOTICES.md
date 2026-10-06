@@ -23,11 +23,18 @@ Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan pen
 | `hive_ce_flutter` 2.4.0 | **BSD-3-Clause** + **Apache-2.0** | ✅ | github.com/IO-Design-Team/hive_ce |
 | `audio_service` 0.18.19 | **MIT** | ✅ | github.com/ryanheise/audio_service |
 | `on_audio_query` 2.9.0 | **BSD-3-Clause** | ✅ | github.com/LucJosin/on_audio_query |
-| `permission_handler` 13.0.2 | **MIT** | ✅ | github.com/baseflow/flutter-permission-handler |
+| `permission_handler` 12.0.3 | **MIT** | ✅ | github.com/baseflow/flutter-permission-handler |
 | `dartz` 0.10.1 | **MIT** | ✅ | github.com/spebbe/dartz |
 | `plugin_platform_interface` 2.1.8 | **BSD-3-Clause** | ✅ | github.com/flutter/packages |
 | `Plus Jakarta Sans` (4 bobot, **dibundel** di `assets/fonts/`) | **OFL-1.1** | ✅ | github.com/tokotype/PlusJakartaSans |
 
+> **Catatan — `permission_handler` 12.0.3 (bukan 13.0.2):** versi 13.0.x menarik
+> `permission_handler_android` 14.1.0 yang mengompilasi dengan `compileSdk = 37`,
+> sedangkan AGP 9.1.0 (yang dipasangkan Flutter 3.47.6) hanya mendukung sampai
+> `compileSdk = 36`. Versi 12.0.3 → `permission_handler_android` 13.0.1
+> (`compileSdkVersion 35`) — kompatibel. Naikkan kembali ke 13.x setelah Flutter
+> mengemas AGP ≥ 9.2. *(6 Okt 2026.)*
+>
 > **Catatan — `hive_ce`:** berkas `LICENSE` (cabang `main`) berisi **dua lisensi berurutan**, dipisah garis `====`:
 > 1. baris 0–11 → **BSD-3-Clause**, *Copyright 2025 Aaron DeLory* (kontribusi fork `hive_ce`)
 > 2. baris 14–211 → **Apache License 2.0**, lampiran *Copyright 2019 Simon Leier* (kode asli Hive)

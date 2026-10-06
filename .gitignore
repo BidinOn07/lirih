@@ -43,6 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# Laporan Gradle (problems-report, dll.) — hasil build, bukan sumber.
+/android/build/
 
 # ── Signing / keystore — task 0.10 ─────────────────────────────
 # JANGAN PERNAH di-commit. CI job `signing-guard` akan menolak.

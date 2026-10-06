@@ -13,7 +13,6 @@ environment:
 # Versi mengikuti `THIRD_PARTY_NOTICES.md` (task R9).
 dependencies:
   audio_service: ^0.18.19 # notifikasi media & layar kunci
-  cupertino_icons: ^1.0.8
   dartz: ^0.10.1 # Either<Failure, T> di layer repository
   flutter:
     sdk: flutter
@@ -24,7 +23,10 @@ dependencies:
   hive_ce_flutter: ^2.4.0 # binding Hive untuk Flutter
   json_annotation: ^4.12.0 # serialisasi model
   on_audio_query: ^2.9.0 # pembacaan MediaStore (lagu, album, artis)
-  permission_handler: ^13.0.2 # izin baca media (Android 13+)
+  # 13.0.2 → permission_handler_android 14.1.0 yang compileSdk 37 — tidak
+  # didukung AGP 9.1.0 (maks 36, pin Flutter 3.47.6). 12.0.3 → android 13.0.1
+  # (compileSdk 35). Naikkan kembali setelah Flutter pakai AGP ≥ 9.2.
+  permission_handler: ^12.0.3 # izin baca media (Android 13+)
   riverpod_annotation: ^4.0.7 # anotasi @riverpod untuk codegen
 
 # ── Dependensi development ─────────────────────────────────────────
