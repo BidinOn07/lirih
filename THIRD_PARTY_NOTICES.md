@@ -1,9 +1,9 @@
-# Third-Party Notices — [NAMA_APLIKASI]
+# Third-Party Notices — Lirih
 
 > **Task:** mitigasi **R9** (`MelodicDSP-Compliance-Roadmap-v3.md`) — kewajiban atribusi lisensi.
 > **Tanggal verifikasi:** 6 Oktober 2026
 > **Metode:** lisensi dibaca langsung dari berkas `LICENSE` di repositori masing-masing, lalu **di-silang cek** dengan tag `license:*` pada API `pub.dev`.
-> Ganti `[NAMA_APLIKASI]` setelah task **0N.4** selesai.
+> Nama aplikasi: **Lirih** — task 0N.4 selesai (6 Okt 2026).
 
 Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan penuh teks lisensi tersedia di tautan masing-masing, dan dapat ditampilkan dari dalam aplikasi melalui layar **Tentang / Lisensi** (lihat bagian 6).
 
@@ -91,9 +91,9 @@ Flutter sudah menyediakan pengumpul lisensi otomatis. Cukup tampilkan halaman li
 ```dart
 showAboutDialog(
   context: context,
-  applicationName: '[NAMA_APLIKASI]',
+  applicationName: 'Lirih',
   applicationVersion: kAppVersion,
-  applicationLegalese: '© 2026 [NAMA_PENGEMBANG]',
+  applicationLegalese: '© 2026 Sakadabra',
   // Daftar dependensi terisi otomatis dari LicenseRegistry
 );
 ```

@@ -2,7 +2,7 @@
 
 **Aplikasi:** Lirih
 **Versi:** 1.0.0
-**Diterbitkan oleh:** [Sakadabra]
+**Diterbitkan oleh:** Sakadabra
 **Terakhir diperbarui:** 6 Oktober 2026
 
 ---
@@ -17,7 +17,7 @@ Aplikasi ini bekerja sepenuhnya **offline**. File musik, playlist, dan riwayat p
 
 ## 2. Cakupan kebijakan ini
 
-Kebijakan ini berlaku untuk aplikasi seluler **Lirih** untuk sistem operasi Android, yang diterbitkan melalui **Google Play Store** oleh **[NAMA_PENGEMBANG]**.
+Kebijakan ini berlaku untuk aplikasi seluler **Lirih** untuk sistem operasi Android, yang diterbitkan melalui **Google Play Store** oleh **Sakadabra**.
 
 Kebijakan ini **tidak mencakup** layanan pihak ketiga yang mungkin Anda akses melalui tautan di luar aplikasi.
 
@@ -165,7 +165,7 @@ Perubahan material akan disertai pembaruan aplikasi di Google Play Store beserta
 
 Untuk pertanyaan mengenai kebijakan ini:
 
-- **[NAMA_PENGEMBANG]**
+- **Sakadabra**
 - Email: **bidinwahyudin090@gmail.com**
 - repositori proyek: **https://github.com/BidinOn07/lirih**
 - situs: **https://bidinon07.github.io/lirih/**

@@ -1,4 +1,4 @@
-# [NAMA_APLIKASI]
+# Lirih
 
 > Pemutar musik **offline** untuk koleksi lokal Anda — dengan **preset frekuensi 440 / 432 / 528 Hz** dan **pengaturan tinggi nada (pitch shift)** yang berlaku langsung saat musik mengalir.
 
