@@ -8,29 +8,29 @@ part of 'recent_plays_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Riwayat trek yang pernah diputar (task 2.6) —disimpan di `recentsBox`.
+/// Riwayat trek yang pernah diputar (task 2.6) — disimpan di `recentsBox`.
 ///
-/// Trek terbaru ada di depan, unik per [Track.id], dibatasi
+/// Trek terbaru ada di depan, unik per id trek, dibatasi
 /// [kMaxRecentPlays] entri. Dipakai tab Home ("Putar terakhir") dan
-/// quick-access. Sama seperti [SearchHistoryController], controller ini
+/// quick-access. Sama seperti SearchHistoryController, controller ini
 /// bersifat *inert* bila box belum terbuka (tidak menghemparkan galat).
 
 @ProviderFor(RecentPlaysController)
 final recentPlaysControllerProvider = RecentPlaysControllerProvider._();
 
-/// Riwayat trek yang pernah diputar (task 2.6) —disimpan di `recentsBox`.
+/// Riwayat trek yang pernah diputar (task 2.6) — disimpan di `recentsBox`.
 ///
-/// Trek terbaru ada di depan, unik per [Track.id], dibatasi
+/// Trek terbaru ada di depan, unik per id trek, dibatasi
 /// [kMaxRecentPlays] entri. Dipakai tab Home ("Putar terakhir") dan
-/// quick-access. Sama seperti [SearchHistoryController], controller ini
+/// quick-access. Sama seperti SearchHistoryController, controller ini
 /// bersifat *inert* bila box belum terbuka (tidak menghemparkan galat).
 final class RecentPlaysControllerProvider
     extends $NotifierProvider<RecentPlaysController, List<Track>> {
-  /// Riwayat trek yang pernah diputar (task 2.6) —disimpan di `recentsBox`.
+  /// Riwayat trek yang pernah diputar (task 2.6) — disimpan di `recentsBox`.
   ///
-  /// Trek terbaru ada di depan, unik per [Track.id], dibatasi
+  /// Trek terbaru ada di depan, unik per id trek, dibatasi
   /// [kMaxRecentPlays] entri. Dipakai tab Home ("Putar terakhir") dan
-  /// quick-access. Sama seperti [SearchHistoryController], controller ini
+  /// quick-access. Sama seperti SearchHistoryController, controller ini
   /// bersifat *inert* bila box belum terbuka (tidak menghemparkan galat).
   RecentPlaysControllerProvider._()
     : super(
@@ -62,11 +62,11 @@ final class RecentPlaysControllerProvider
 String _$recentPlaysControllerHash() =>
     r'9f7b17af9770272ea8925ea371f4eb28ac6f3dfd';
 
-/// Riwayat trek yang pernah diputar (task 2.6) —disimpan di `recentsBox`.
+/// Riwayat trek yang pernah diputar (task 2.6) — disimpan di `recentsBox`.
 ///
-/// Trek terbaru ada di depan, unik per [Track.id], dibatasi
+/// Trek terbaru ada di depan, unik per id trek, dibatasi
 /// [kMaxRecentPlays] entri. Dipakai tab Home ("Putar terakhir") dan
-/// quick-access. Sama seperti [SearchHistoryController], controller ini
+/// quick-access. Sama seperti SearchHistoryController, controller ini
 /// bersifat *inert* bila box belum terbuka (tidak menghemparkan galat).
 
 abstract class _$RecentPlaysController extends $Notifier<List<Track>> {

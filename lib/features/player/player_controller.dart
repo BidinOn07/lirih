@@ -6,6 +6,8 @@ import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/home/recent_plays_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
+import 'package:lirih/features/player/repeat_mode.dart';
+import 'package:lirih/features/settings/settings_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -34,20 +36,22 @@ class PlayerController extends _$PlayerController {
 
   @override
   PlayerState build() {
+    // Frekuensi default dipulihkan dari pengaturan (task 5.x).
+    final defaultHz = ref.read(settingsControllerProvider);
     _eventSub = _dsp.events.listen(_onNativeEvent);
     ref.onDispose(() {
       unawaited(_eventSub?.cancel());
       _positionTimer?.cancel();
       unawaited(_dsp.stop());
     });
-    return const PlayerState(queue: <Track>[]);
+    return PlayerState(queue: const <Track>[], frequencyHz: defaultHz);
   }
 
   /// Menangani event dari mesin native.
   void _onNativeEvent(DspEventPayload payload) {
     switch (payload.event) {
       case DspEvent.completed:
-        unawaited(skipNext());
+        unawaited(_skipBy(1, auto: true));
       case DspEvent.error:
         state = state.copyWith(isPlaying: false);
         _stopPositionTimer();
@@ -92,16 +96,38 @@ class PlayerController extends _$PlayerController {
     }
   }
 
-  /// Trek berikutnya (membungkus ke awal bila di akhir antrean).
-  Future<void> skipNext() => _skipBy(1);
+  /// Trek berikutnya (skip eksplisit selalu membungkus ke awal).
+  Future<void> skipNext() => _skipBy(1, auto: false);
 
-  /// Trek sebelumnya (membungkus ke akhir bila di awal antrean).
-  Future<void> skipPrevious() => _skipBy(-1);
+  /// Trek sebelumnya (skip eksplisit selalu membungkus ke akhir).
+  Future<void> skipPrevious() => _skipBy(-1, auto: false);
 
-  Future<void> _skipBy(int delta) async {
+  /// Memajukan antrean sesuai [delta]; [auto] `true` saat dipicu trek
+  /// selesai (bukan tombol skip) — mematuhi mode `LoopMode`.
+  Future<void> _skipBy(int delta, {required bool auto}) async {
     final queue = state.queue;
     if (queue.isEmpty) return;
-    final next = (state.currentIndex + delta) % queue.length;
+
+    final lastIndex = queue.length - 1;
+    final current = state.currentIndex;
+
+    // Repeat one: trek yang sama diputar ulang saat selesai otomatis.
+    if (auto && state.repeatMode == LoopMode.one && current >= 0) {
+      await playTrack(queue[current], queue: queue);
+      return;
+    }
+
+    var next = current + delta;
+    if (auto && next > lastIndex) {
+      // Akhir antrean tercapai otomatis: berhenti bila repeat off.
+      if (state.repeatMode != LoopMode.all) {
+        await stop();
+        return;
+      }
+      next = 0;
+    }
+    next %= queue.length; // membungkus kedua arah (Dart: % Euclidean)
+
     await playTrack(queue[next], queue: queue);
   }
 
@@ -111,10 +137,20 @@ class PlayerController extends _$PlayerController {
     state = state.copyWith(positionMs: position.inMilliseconds);
   }
 
+  /// Mengganti mode pengulangan: off → all → one → off (task 1.11).
+  Future<void> toggleRepeat() async {
+    final current = kLoopCycle.indexOf(state.repeatMode);
+    final next = kLoopCycle[(current + 1) % kLoopCycle.length];
+    state = state.copyWith(repeatMode: next);
+  }
+
   /// Mengatur frekuensi penalaan (diterapkan real-time ke mesin native).
   Future<void> setFrequency(double hz) async {
     state = state.copyWith(frequencyHz: hz);
     await _dsp.setPitch(pitchRatioForFrequency(hz));
+    unawaited(
+      ref.read(settingsControllerProvider.notifier).setDefaultFrequency(hz),
+    );
   }
 
   /// Menghentikan playback sepenuhnya.

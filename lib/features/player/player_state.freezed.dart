@@ -21,7 +21,8 @@ mixin _$PlayerState {
  bool get isPlaying;/// Posisi playback (milidetik).
  int get positionMs;/// Durasi trek aktif (milidetik).
  int get durationMs;/// Frekuensi penalaan aktif (default A4 internasional).
- double get frequencyHz;
+ double get frequencyHz;/// Mode pengulangan antrean (task 1.11).
+ LoopMode get repeatMode;
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,20 +34,20 @@ $PlayerStateCopyWith<PlayerState> get copyWith => _$PlayerStateCopyWithImpl<Play
 @override
 bool operator ==(Object other) {
   final _this = this as PlayerState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlayerState&&const DeepCollectionEquality().equals(other.queue, _this.queue)&&(identical(other.currentIndex, _this.currentIndex) || other.currentIndex == _this.currentIndex)&&(identical(other.isPlaying, _this.isPlaying) || other.isPlaying == _this.isPlaying)&&(identical(other.positionMs, _this.positionMs) || other.positionMs == _this.positionMs)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.frequencyHz, _this.frequencyHz) || other.frequencyHz == _this.frequencyHz));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlayerState&&const DeepCollectionEquality().equals(other.queue, _this.queue)&&(identical(other.currentIndex, _this.currentIndex) || other.currentIndex == _this.currentIndex)&&(identical(other.isPlaying, _this.isPlaying) || other.isPlaying == _this.isPlaying)&&(identical(other.positionMs, _this.positionMs) || other.positionMs == _this.positionMs)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.frequencyHz, _this.frequencyHz) || other.frequencyHz == _this.frequencyHz)&&(identical(other.repeatMode, _this.repeatMode) || other.repeatMode == _this.repeatMode));
 }
 
 
 @override
 int get hashCode {
   final _this = this as PlayerState;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.queue),_this.currentIndex,_this.isPlaying,_this.positionMs,_this.durationMs,_this.frequencyHz);
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.queue),_this.currentIndex,_this.isPlaying,_this.positionMs,_this.durationMs,_this.frequencyHz,_this.repeatMode);
 }
 
 @override
 String toString() {
   final _this = this as PlayerState;
-  return 'PlayerState(queue: ${_this.queue}, currentIndex: ${_this.currentIndex}, isPlaying: ${_this.isPlaying}, positionMs: ${_this.positionMs}, durationMs: ${_this.durationMs}, frequencyHz: ${_this.frequencyHz})';
+  return 'PlayerState(queue: ${_this.queue}, currentIndex: ${_this.currentIndex}, isPlaying: ${_this.isPlaying}, positionMs: ${_this.positionMs}, durationMs: ${_this.durationMs}, frequencyHz: ${_this.frequencyHz}, repeatMode: ${_this.repeatMode})';
 }
 
 
@@ -57,7 +58,7 @@ abstract mixin class $PlayerStateCopyWith<$Res>  {
   factory $PlayerStateCopyWith(PlayerState value, $Res Function(PlayerState) _then) = _$PlayerStateCopyWithImpl;
 @useResult
 $Res call({
- List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz
+ List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode
 });
 
 
@@ -74,7 +75,7 @@ class _$PlayerStateCopyWithImpl<$Res>
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,}) {
   return _then(PlayerState(
 queue: null == queue ? _self.queue : queue // ignore: cast_nullable_to_non_nullable
 as List<Track>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
@@ -82,7 +83,8 @@ as int,isPlaying: null == isPlaying ? _self.isPlaying : isPlaying // ignore: cas
 as bool,positionMs: null == positionMs ? _self.positionMs : positionMs // ignore: cast_nullable_to_non_nullable
 as int,durationMs: null == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int,frequencyHz: null == frequencyHz ? _self.frequencyHz : frequencyHz // ignore: cast_nullable_to_non_nullable
-as double,
+as double,repeatMode: null == repeatMode ? _self.repeatMode : repeatMode // ignore: cast_nullable_to_non_nullable
+as LoopMode,
   ));
 }
 
@@ -167,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlayerState() when $default != null:
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
   return orElse();
 
 }
@@ -188,10 +190,10 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)  $default,) {final _that = this;
 switch (_that) {
 case _PlayerState():
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +210,10 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)?  $default,) {final _that = this;
 switch (_that) {
 case _PlayerState() when $default != null:
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
   return null;
 
 }
@@ -223,7 +225,7 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 
 
 class _PlayerState extends PlayerState {
-  const _PlayerState({required  List<Track> queue, this.currentIndex = -1, this.isPlaying = false, this.positionMs = 0, this.durationMs = 0, this.frequencyHz = kReferenceFrequencyHz}): _queue = queue,super._();
+  const _PlayerState({required  List<Track> queue, this.currentIndex = -1, this.isPlaying = false, this.positionMs = 0, this.durationMs = 0, this.frequencyHz = kReferenceFrequencyHz, this.repeatMode = LoopMode.off}): _queue = queue,super._();
   
 
 /// Antrean trek yang sedang dimainkan.
@@ -245,6 +247,8 @@ class _PlayerState extends PlayerState {
 @override@JsonKey() final  int durationMs;
 /// Frekuensi penalaan aktif (default A4 internasional).
 @override@JsonKey() final  double frequencyHz;
+/// Mode pengulangan antrean (task 1.11).
+@override@JsonKey() final  LoopMode repeatMode;
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
@@ -256,18 +260,18 @@ _$PlayerStateCopyWith<_PlayerState> get copyWith => __$PlayerStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlayerState&&const DeepCollectionEquality().equals(other.queue, _queue)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.positionMs, positionMs) || other.positionMs == positionMs)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.frequencyHz, frequencyHz) || other.frequencyHz == frequencyHz));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlayerState&&const DeepCollectionEquality().equals(other.queue, _queue)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.positionMs, positionMs) || other.positionMs == positionMs)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.frequencyHz, frequencyHz) || other.frequencyHz == frequencyHz)&&(identical(other.repeatMode, repeatMode) || other.repeatMode == repeatMode));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_queue),currentIndex,isPlaying,positionMs,durationMs,frequencyHz);
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_queue),currentIndex,isPlaying,positionMs,durationMs,frequencyHz,repeatMode);
 }
 
 @override
 String toString() {
-    return 'PlayerState(queue: $queue, currentIndex: $currentIndex, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, frequencyHz: $frequencyHz)';
+    return 'PlayerState(queue: $queue, currentIndex: $currentIndex, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, frequencyHz: $frequencyHz, repeatMode: $repeatMode)';
 }
 
 
@@ -278,7 +282,7 @@ abstract mixin class _$PlayerStateCopyWith<$Res> implements $PlayerStateCopyWith
   factory _$PlayerStateCopyWith(_PlayerState value, $Res Function(_PlayerState) _then) = __$PlayerStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz
+ List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode
 });
 
 
@@ -295,7 +299,7 @@ class __$PlayerStateCopyWithImpl<$Res>
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,}) {
   return _then(_PlayerState(
 queue: null == queue ? _self._queue : queue // ignore: cast_nullable_to_non_nullable
 as List<Track>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
@@ -303,7 +307,8 @@ as int,isPlaying: null == isPlaying ? _self.isPlaying : isPlaying // ignore: cas
 as bool,positionMs: null == positionMs ? _self.positionMs : positionMs // ignore: cast_nullable_to_non_nullable
 as int,durationMs: null == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int,frequencyHz: null == frequencyHz ? _self.frequencyHz : frequencyHz // ignore: cast_nullable_to_non_nullable
-as double,
+as double,repeatMode: null == repeatMode ? _self.repeatMode : repeatMode // ignore: cast_nullable_to_non_nullable
+as LoopMode,
   ));
 }
 

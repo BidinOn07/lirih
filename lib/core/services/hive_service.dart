@@ -18,6 +18,9 @@ abstract final class HiveBoxes {
 
   /// Lirik tersimpan per trek (task 3.2).
   static const String lyrics = 'lyricsBox';
+
+  /// Pengaturan aplikasi (frekuensi default, dll. — task 5.x).
+  static const String settings = 'settingsBox';
 }
 
 /// Layanan inisialisasi penyimpanan lokal Hive (task 1.10, TDD §7).
@@ -41,6 +44,7 @@ class HiveService {
       _openSafe(HiveBoxes.searchHistory),
       _openSafe(HiveBoxes.playlists),
       _openSafe(HiveBoxes.lyrics),
+      _openSafe(HiveBoxes.settings),
     ]);
   }
 

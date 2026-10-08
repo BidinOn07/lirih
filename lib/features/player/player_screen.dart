@@ -9,6 +9,7 @@ import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
 import 'package:lirih/features/player/queue_sheet.dart';
+import 'package:lirih/features/player/repeat_mode.dart';
 import 'package:lirih/features/player/sleep_timer_controller.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
@@ -266,7 +267,35 @@ class _Controls extends ConsumerWidget {
           color: AppColors.soga50,
           iconSize: 40,
         ),
+        const SizedBox(width: 8),
+        const _RepeatButton(),
       ],
+    );
+  }
+}
+
+/// Tombol mode pengulangan: off → all → one (task 1.11).
+class _RepeatButton extends ConsumerWidget {
+  const _RepeatButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(
+      playerControllerProvider.select((state) => state.repeatMode),
+    );
+    final notifier = ref.read(playerControllerProvider.notifier);
+    final active = mode != LoopMode.off;
+
+    return IconButton(
+      onPressed: notifier.toggleRepeat,
+      icon: Icon(mode == LoopMode.one ? Icons.repeat_one : Icons.repeat),
+      color: active ? AppColors.kunir500 : AppColors.soga300,
+      iconSize: 26,
+      tooltip: mode == LoopMode.off
+          ? 'Ulang: mati'
+          : mode == LoopMode.all
+          ? 'Ulang: semua trek'
+          : 'Ulang: satu trek',
     );
   }
 }

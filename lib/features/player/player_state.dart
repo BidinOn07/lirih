@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/player/repeat_mode.dart';
 
 part 'player_state.freezed.dart';
 
@@ -31,6 +32,9 @@ abstract class PlayerState with _$PlayerState {
 
     /// Frekuensi penalaan aktif (default A4 internasional).
     @Default(kReferenceFrequencyHz) double frequencyHz,
+
+    /// Mode pengulangan antrean (task 1.11).
+    @Default(LoopMode.off) LoopMode repeatMode,
   }) = _PlayerState;
   const PlayerState._();
 

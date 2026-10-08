@@ -11,6 +11,7 @@ import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/home/recent_plays_controller.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/features/settings/settings_screen.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Layar Beranda (task 2.6) — titik mula aplikasi.
@@ -36,6 +37,15 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: AppColors.soga800,
         foregroundColor: AppColors.soga50,
         title: const Text('Beranda'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            ),
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Pengaturan',
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
