@@ -42,4 +42,9 @@ abstract class Track with _$Track {
 
   /// Nama tampilan singkat: "Artis − Judul".
   String get displayLabel => '$artist − $title';
+
+  /// Absolute path atau `content://` URI berkas audio (v1 selalu lokal).
+  String get sourcePath => switch (source) {
+    LocalSource(:final filePath) => filePath,
+  };
 }

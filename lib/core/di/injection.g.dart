@@ -58,15 +58,15 @@ final class MediaStoreScannerProvider
   }
 }
 
-String _$mediaStoreScannerHash() => r'1af7a9944c39d813fec6e8b4ead8612de5347e96';
+String _$mediaStoreScannerHash() => r'7a8a5fa3e8718102a4ff81250acf1aaf1fea176e';
 
-/// Kontrak domain [MusicLibraryRepository] — selalu akses lewat provider ini
+/// Kontrak domain MusicLibraryRepository — selalu akses lewat provider ini
 /// agar layer presentation tidak bergantung pada implementasi `on_audio_query`.
 
 @ProviderFor(musicLibraryRepository)
 final musicLibraryRepositoryProvider = MusicLibraryRepositoryProvider._();
 
-/// Kontrak domain [MusicLibraryRepository] — selalu akses lewat provider ini
+/// Kontrak domain MusicLibraryRepository — selalu akses lewat provider ini
 /// agar layer presentation tidak bergantung pada implementasi `on_audio_query`.
 
 final class MusicLibraryRepositoryProvider
@@ -77,7 +77,7 @@ final class MusicLibraryRepositoryProvider
           MusicLibraryRepository
         >
     with $Provider<MusicLibraryRepository> {
-  /// Kontrak domain [MusicLibraryRepository] — selalu akses lewat provider ini
+  /// Kontrak domain MusicLibraryRepository — selalu akses lewat provider ini
   /// agar layer presentation tidak bergantung pada implementasi `on_audio_query`.
   MusicLibraryRepositoryProvider._()
     : super(
@@ -114,4 +114,4 @@ final class MusicLibraryRepositoryProvider
 }
 
 String _$musicLibraryRepositoryHash() =>
-    r'09a20a53972a36721ea331df8564009c7f16daa9';
+    r'80365898c548337a8ae2fa3bc23f61bac86010f5';

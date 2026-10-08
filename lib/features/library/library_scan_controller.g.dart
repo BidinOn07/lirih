@@ -13,7 +13,7 @@ part of 'library_scan_controller.dart';
 ///
 /// Memuat otomatis saat pertama dibaca (`build`), dan dapat dimuat ulang
 /// lewat [rescan] (pull-to-refresh di Tracks). Mengembalikan daftar [Track]
-/// atau galat dari [MusicLibraryRepository] — UI memetakan galat ke
+/// atau galat dari MusicLibraryRepository — UI memetakan galat ke
 /// *empty state* yang sesuai (task 3.6).
 
 @ProviderFor(LibraryScanController)
@@ -24,7 +24,7 @@ final libraryScanControllerProvider = LibraryScanControllerProvider._();
 ///
 /// Memuat otomatis saat pertama dibaca (`build`), dan dapat dimuat ulang
 /// lewat [rescan] (pull-to-refresh di Tracks). Mengembalikan daftar [Track]
-/// atau galat dari [MusicLibraryRepository] — UI memetakan galat ke
+/// atau galat dari MusicLibraryRepository — UI memetakan galat ke
 /// *empty state* yang sesuai (task 3.6).
 final class LibraryScanControllerProvider
     extends $AsyncNotifierProvider<LibraryScanController, List<Track>> {
@@ -33,7 +33,7 @@ final class LibraryScanControllerProvider
   ///
   /// Memuat otomatis saat pertama dibaca (`build`), dan dapat dimuat ulang
   /// lewat [rescan] (pull-to-refresh di Tracks). Mengembalikan daftar [Track]
-  /// atau galat dari [MusicLibraryRepository] — UI memetakan galat ke
+  /// atau galat dari MusicLibraryRepository — UI memetakan galat ke
   /// *empty state* yang sesuai (task 3.6).
   LibraryScanControllerProvider._()
     : super(
@@ -55,14 +55,14 @@ final class LibraryScanControllerProvider
 }
 
 String _$libraryScanControllerHash() =>
-    r'7f31ccb66131f29a9db46eb7245d528cf0c9c58c';
+    r'518274d1acef0887d27d66d990f5f7ea707ac3c8';
 
 /// Status pemindaian pustaka (task 1.12) — sumber kebenaran daftar lagu
 /// untuk tab Tracks/Home.
 ///
 /// Memuat otomatis saat pertama dibaca (`build`), dan dapat dimuat ulang
 /// lewat [rescan] (pull-to-refresh di Tracks). Mengembalikan daftar [Track]
-/// atau galat dari [MusicLibraryRepository] — UI memetakan galat ke
+/// atau galat dari MusicLibraryRepository — UI memetakan galat ke
 /// *empty state* yang sesuai (task 3.6).
 
 abstract class _$LibraryScanController extends $AsyncNotifier<List<Track>> {

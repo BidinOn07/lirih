@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lirih/app.dart';
-import 'package:lirih/shared/widgets/lirih_logo.dart';
-import 'package:lirih/shared/widgets/lirih_wordmark.dart';
+import 'package:lirih/features/library/library_screen.dart';
 
 void main() {
   group('LirihApp', () {
     testWidgets('me-render MaterialApp', (tester) async {
-      await tester.pumpWidget(const LirihApp());
+      await tester.pumpWidget(const ProviderScope(child: LirihApp()));
 
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
-    testWidgets('menampilkan logo dan wordmark Lirih (task 0N.5)', (
+    testWidgets('navigasi bawah 3 tab & tab Pustaka aktif (task 2.4)', (
       tester,
     ) async {
-      await tester.pumpWidget(const LirihApp());
+      await tester.pumpWidget(const ProviderScope(child: LirihApp()));
 
-      expect(find.byType(LirihLogo), findsOneWidget);
-      expect(find.byType(LirihWordmark), findsOneWidget);
-      // Wordmark memakai huruf kapital ("LIRIH"), bukan [LirihApp.title].
-      expect(find.text('LIRIH'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.text('PoC'), findsOneWidget);
+      // Tab pertama (Pustaka) adalah layar awal.
+      expect(find.byType(LibraryScreen), findsOneWidget);
     });
   });
 }
