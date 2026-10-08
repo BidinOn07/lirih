@@ -80,6 +80,16 @@ Linter: `very_good_analysis` 11.0.0 (sangat ketat) + tambahan proyek di `analysi
 - **Material tanda tangan tidak boleh masuk repo:** `key.properties`, `*.jks`, `*.keystore`, `*.p12`, `*.pem`, `service-account*.json`. Job CI `signing-guard` akan **gagalkan build** jika ter-track.
 - AAB untuk Play dibuat **lokal** dengan keystore di luar repo; artefak job CI `build` **unsigned** dan hanya untuk verifikasi.
 
+## PoC pitch shift (task 0.6/0.8 — sementara)
+
+Risiko teknis tertinggi sudah dijalankan. Yang perlu diketahui sesi berikutnya:
+
+- **Native:** `android/.../dsp/LirihDspPlayer.kt` (ExoPlayer + `PlaybackParameters(tempo, pitch)`) + `DspPlugin.kt` (MethodChannel), terdaftar di `MainActivity.kt`.
+- **Dart:** `lib/features/poc_pitch/` — `DspChannel` (client channel), `WavToneGenerator` (nada uji 440 Hz ke `Directory.systemTemp`), `PoCPitchScreen` (alat uji). **Sementara** — dipindah ke plugin `lirih_audio` di Minggu 3 (task 1.x); pintu sementaranya di `lib/app.dart`.
+- **Pitch math permanen & teruji:** `lib/core/utils/pitch_math.dart` + `test/core/utils/pitch_math_test.dart`. `ratio = target/440`; `cents = 1200·log2(target/440)`. Catatan: 528 Hz = **+315.64 cents** (rasio 1.2×).
+- **Pilihan desain:** `PlaybackParameters` (AudioTrack time-stretch, API 23+) diuji duluan karena paling murah. **Eskalasi bila ada artifact (validasi 0.9):** `PitchAudioProcessor` (Sonic) pada custom audio sink — lihat TDD §4.3.
+- **Status:** kompilasi & unit test hijau; **belum divalidasi di perangkat**. Validasi telinga pada 432/528 Hz (task 0.9) butuh device fisik + headphone.
+
 ## Rujukan
 
 - `docs/MelodicDSP-v1-Checklist.md` — checklist harian; centang `[x]` setiap task selesai. Nomor task menyilang ke roadmap.
