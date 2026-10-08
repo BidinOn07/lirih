@@ -90,6 +90,26 @@ Risiko teknis tertinggi sudah dijalankan. Yang perlu diketahui sesi berikutnya:
 - **Pilihan desain:** `PlaybackParameters` (AudioTrack time-stretch, API 23+) diuji duluan karena paling murah. **Eskalasi bila ada artifact (validasi 0.9):** `PitchAudioProcessor` (Sonic) pada custom audio sink — lihat TDD §4.3.
 - **Status:** kompilasi & unit test hijau; **belum divalidasi di perangkat**. Validasi telinga pada 432/528 Hz (task 0.9) butuh device fisik + headphone.
 
+## Sampel musik uji (task 0.9)
+
+- **`assets/samples/`** berisi sampel audio **berhak cipta** untuk pengujian debug di perangkat sendiri. Isi folder **di-gitignore** (`!assets/samples/.gitkeep`) — **jangan pernah commit**, dan **jangan masukkan ke AAB rilis**.
+- Deklarasi di `pubspec.yaml` memakai **direktori** (`- assets/samples/`) agar CI tetap hijau saat folder kosong (fresh clone tidak punya sampel).
+- **Guard wajib sebelum `flutter build appbundle --release`:** `powershell ./ignore/tools/check-release-samples.ps1` — gagal (exit 1) jika masih ada audio di folder.
+- Di app: tombol "Putar sampel musik" (`BundledSample`) mengekstrak asset ke `Directory.systemTemp` lalu diputar mesin DSP. Bila sampel tak ada, tombol menampilkan pesan (tidak crash).
+
+## Arsitektur domain (task 1.12 — berjalan)
+
+- **Model freezed:** `Track`, `TrackSource` (sealed, hanya `LocalSource`), `FrequencyPreset` — di `lib/domain/entities/`. Codegen: `dart run build_runner build` (~10 d; flag `--delete-conflicting-outputs` sudah tidak didukung build_runner 2.16).
+- **Riverpod 4.x:** provider fungsi memakai `Ref ref` generik (BUKAN `{Nama}Ref`); AsyncNotifier via `@riverpod class`. DI di `lib/core/di/injection.dart`.
+- **Repository:** `MusicLibraryRepositoryImpl` memetakan `SongModel` → `Track`, menyaring ekstensi (`.mp3/.flac/.wav/.m4a/.aac/.oga/.opus`), menormalkan artis/album kosong. Galat via dartz `Either<Failure, T>`; `Failure implements Exception` agar bisa `throw` di AsyncNotifier (`lib/core/extensions/either_x.dart` → `getOrThrow`).
+- **ID stabil:** `stableTrackId()` deterministik dari konten (path+judul+artis+durasi) — **penyimpangan disengaja dari TDD §3.2** (UUID acak justru berubah tiap scan, memutus referensi Hive).
+- **Ekstensi `fileExtension`:** berasal dari key map `file_extension` di `SongModel`, bukan nama file.
+
+## Keputusan penundaan
+
+- **FLAC:** dekoder native media3 (`media3-decoder-flac`) **tidak ada di Maven** — ekstensi decoder media3 harus dibangun dari source + NDK. Sementara FLAC hanya jalan di **API 31+** (dekoder platform). Penyebab: ini masalah *packaging*, bukan risiko pitch-shift. Ditangani terpisah untuk v1.
+- **Plugin `lirih_audio` (Minggu 3):** ditunda — mesin in-app sudah berfungsi; prioritas diberikan ke fitur yang bisa diuji pengguna (pemindai pustaka, UI).
+
 ## Rujukan
 
 - `docs/MelodicDSP-v1-Checklist.md` — checklist harian; centang `[x]` setiap task selesai. Nomor task menyilang ke roadmap.

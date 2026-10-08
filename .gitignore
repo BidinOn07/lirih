@@ -65,5 +65,13 @@ service-account*.json
 /ignore/
 /docs/
 
+# ── Sampel musik uji (task 0.9) ───────────────────────────────
+# Sampel berhak cipta HANYA untuk pengujian debug di perangkat sendiri.
+# JANGAN PERNAH di-commit ke repo publik. Folder tetap dilacak via
+# .gitkeep supaya deklarasi direktori di pubspec tidak gagal di CI.
+# Guard rilis: ignore/tools/check-release-samples.ps1
+assets/samples/*
+!assets/samples/.gitkeep
+
 
 .vscode/templates

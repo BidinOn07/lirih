@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
+import 'package:lirih/features/poc_pitch/bundled_sample.dart';
 import 'package:lirih/features/poc_pitch/dsp_channel.dart';
 import 'package:lirih/features/poc_pitch/wav_tone_generator.dart';
 
@@ -25,6 +26,7 @@ class PoCPitchScreen extends StatefulWidget {
 class _PoCPitchScreenState extends State<PoCPitchScreen> {
   final DspChannel _dsp = const DspChannel();
   final WavToneGenerator _tones = const WavToneGenerator();
+  final BundledSample _sample = const BundledSample();
 
   static const double _reference = kReferenceFrequencyHz;
 
@@ -32,6 +34,8 @@ class _PoCPitchScreenState extends State<PoCPitchScreen> {
   double _tempo = 1;
   bool _isPlaying = false;
   bool _isPreparing = false;
+  bool _pickingFile = false;
+  bool _loadingSample = false;
   String _status = 'Tekan "Bunyikan 440 Hz" untuk memulai.';
 
   Future<void> _playReference() async {
@@ -56,6 +60,78 @@ class _PoCPitchScreenState extends State<PoCPitchScreen> {
       if (mounted) {
         setState(() {
           _isPreparing = false;
+          _status = 'Galat: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _playBundledSample() async {
+    setState(() {
+      _loadingSample = true;
+      _status = 'Menyiapkan sampel musik…';
+    });
+    try {
+      final path = await _sample.prepare();
+      if (path == null) {
+        if (mounted) {
+          setState(() {
+            _loadingSample = false;
+            _status =
+                'Sampel tidak tersedia di build ini (assets/samples/ '
+                'kosong). Tambahkan berkas atau gunakan pemilih berkas.';
+          });
+        }
+        return;
+      }
+      await _dsp.play(path);
+      if (mounted) {
+        setState(() {
+          _loadingSample = false;
+          _isPlaying = true;
+          _frequency = 440;
+          _status = 'Memutar sampel musik. Uji preset 432 / 528 Hz.';
+        });
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingSample = false;
+          _status = 'Galat: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _pickMusicFile() async {
+    setState(() {
+      _pickingFile = true;
+      _status = 'Memilih berkas musik…';
+    });
+    try {
+      final uri = await _dsp.pickMusicFile();
+      if (uri == null) {
+        if (mounted) {
+          setState(() {
+            _pickingFile = false;
+            _status = 'Pemilihan dibatalkan.';
+          });
+        }
+        return;
+      }
+      // Pemutaran langsung dimulai oleh native saat URI kembali.
+      if (mounted) {
+        setState(() {
+          _pickingFile = false;
+          _isPlaying = true;
+          _frequency = 440;
+          _status = 'Memutar berkas. Uji preset 432 / 528 Hz.';
+        });
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          _pickingFile = false;
           _status = 'Galat: $e';
         });
       }
@@ -192,7 +268,7 @@ class _PoCPitchScreenState extends State<PoCPitchScreen> {
             const Spacer(),
 
             // ── Kendali utama ─────────────────────────────────────────
-            if (_isPlaying)
+            if (_isPlaying) ...[
               FilledButton.icon(
                 onPressed: _stop,
                 icon: const Icon(Icons.stop),
@@ -200,8 +276,14 @@ class _PoCPitchScreenState extends State<PoCPitchScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.error500,
                 ),
-              )
-            else
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickingFile ? null : _pickMusicFile,
+                icon: const Icon(Icons.audio_file),
+                label: const Text('Ganti berkas musik'),
+              ),
+            ] else ...[
               FilledButton.icon(
                 onPressed: _isPreparing ? null : _playReference,
                 icon: _isPreparing
@@ -213,11 +295,42 @@ class _PoCPitchScreenState extends State<PoCPitchScreen> {
                     : const Icon(Icons.play_arrow),
                 label: const Text('Bunyikan 440 Hz'),
               ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: _loadingSample ? null : _playBundledSample,
+                icon: _loadingSample
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.music_note),
+                label: const Text('Putar sampel musik'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.kunir700,
+                  foregroundColor: AppColors.soga50,
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickingFile ? null : _pickMusicFile,
+                icon: _pickingFile
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.audio_file),
+                label: const Text('Pilih berkas musik (MP3/FLAC/AAC)'),
+              ),
+            ],
             const SizedBox(height: 8),
             const Text(
               'Catatan: slider & preset hanya aktif saat memutar. '
               'Validasi telinga: 432 Hz harus terdengar sedikit lebih rendah '
-              'dari 440 Hz; 528 Hz jelas lebih tinggi.',
+              'dari 440 Hz; 528 Hz jelas lebih tinggi. Uji pada berkas '
+              'musik nyata (MP3 128k / FLAC / AAC) — artifact paling '
+              'terlihat pada audio bersuhu tinggi, bukan nada murni.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.soga400, fontSize: 12),
             ),

@@ -49,8 +49,10 @@ dependencies {
     // 1.11.1 (10 Sep 2026) — stable terbaru, kompatibel compileSdk 36.
     // Lisensi Apache-2.0 → dicatat di THIRD_PARTY_NOTICES.md (R9).
     // Hanya modul inti: MP3/WAV/AAC/M4A ditangani extractor bawaan +
-    // dekoder platform (MediaCodec). FLAC butuh media3-decoder-flac
-    // bila perlu (ditambahkan saat validasi 0.9).
+    // dekoder platform (MediaCodec). FLAC: dekoder platform hanya ada di
+    // API 31+, dan ekstensi native media3 (media3-decoder-flac) TIDAK
+    // diterbitkan di Maven (harus dibangun dari source media3 + NDK) —
+    // lihat catatan risiko di AGENTS.md. Ditangani terpisah untuk v1.
     implementation("androidx.media3:media3-exoplayer:1.11.1")
 }
 

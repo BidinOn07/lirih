@@ -50,6 +50,12 @@ flutter:
   assets:
     # Lisensi font ikut terbundel ke APK — kewajiban OFL-1.1 (task R9)
     - assets/fonts/OFL-PlusJakartaSans.txt
+    # ── Sampel musik uji (task 0.9) ────────────────────────────
+    # Direktori (bukan berkas) agar CI tetap hijau saat folder kosong.
+    # Isinya (audio berhak cipta) di-gitignore & TIDAK boleh masuk AAB
+    # rilis — jalankan ignore/tools/check-release-samples.ps1 sebelum
+    # flutter build appbundle. Lihat AGENTS.md §Sampel uji.
+    - assets/samples/
 
   # ── Tipografi (task 0N.7) ─────────────────────────────────────
   # Plus Jakarta Sans — OFL-1.1, dirancang Tokotype (foundry Indonesia).

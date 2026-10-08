@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -20,6 +22,27 @@ class DspChannel {
   /// Memutar berkas audio di absolute [path].
   Future<void> play(String path) =>
       _channel.invokeMethod<void>('play', <String, dynamic>{'path': path});
+
+  /// Membuka pemilih berkas sistem (SAF) untuk memilih musik.
+  ///
+  /// Mengembalikan `content://` URI berkas yang dipilih (dan langsung
+  /// diputar), atau `null` bila pengguna membatalkan. **Tanpa permission**
+  /// — akses baca sementara diberikan oleh SAF.
+  Future<String?> pickMusicFile() {
+    final completer = Completer<String?>();
+    // PoC: handler dipasang sementara sampai URI kembali.
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onFilePicked') {
+        final args = call.arguments as Map<Object?, Object?>?;
+        completer.complete(args?['uri'] as String?);
+        _channel.setMethodCallHandler(null);
+      }
+      return null;
+    });
+    // Fire-and-forget: hasil datang via callback onFilePicked.
+    unawaited(_channel.invokeMethod<void>('pickFile'));
+    return completer.future;
+  }
 
   /// Menjeda playback.
   Future<void> pause() => _channel.invokeMethod<void>('pause');
