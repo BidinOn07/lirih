@@ -142,4 +142,19 @@ class DspChannel {
     milliseconds:
         (await _channel.invokeMethod<num>('getDuration'))?.toInt() ?? 0,
   );
+
+  /// Lirik tertanam trek di [path] (`content://` URI atau absolute path).
+  ///
+  /// Mengembalikan `null` bila trek tidak punya frame lirik ID3v2 (`USLT`)
+  /// atau terjadi kegagalan — **best effort**, tidak boleh mengganggu
+  /// playback. Lirik tidak tersinkron (plain text); sinkronisasi otomatis
+  /// butuh timestamp SYLT yang belum didukung (task 3.3 ditunda ke parser
+  /// ID3 kustom yang lebih lengkap).
+  Future<String?> lyricsFor(String path) async {
+    final result = await _channel.invokeMethod<String>(
+      'getLyrics',
+      <String, dynamic>{'path': path},
+    );
+    return result;
+  }
 }

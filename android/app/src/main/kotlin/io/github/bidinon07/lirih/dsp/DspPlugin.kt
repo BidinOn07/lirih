@@ -9,6 +9,8 @@ import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import kotlin.math.min
 
 /// Nama MethodChannel DSP — TERKUNCI task 0N.4.
 const val DSP_CHANNEL = "io.github.bidinon07.lirih/dsp"
@@ -17,6 +19,10 @@ private const val TAG = "LirihDsp"
 
 /// Request code pemilihan berkas (di luar rentang yang dipakai engine).
 private const val RC_PICK_AUDIO = 42420
+
+/// Batas atas tag ID3 yang dibaca ke memori (frame USLT biasanya di awal;
+/// frame APIC/cover bisa besar sehingga 2 MB cukup aman).
+private const val MAX_TAG_BYTES = 2 * 1024 * 1024
 
 /**
  * Jembatan MethodChannel `io.github.bidinon07.lirih/dsp` — PoC task **0.8**.
@@ -148,6 +154,20 @@ class DspPlugin(
                 "getPitch" -> result.success(player.getPitch())
                 "getPosition" -> result.success(player.getPosition())
                 "getDuration" -> result.success(player.getDuration())
+                "getLyrics" -> {
+                    // Baca lirik tertanam (tag USLT/ID3) — I/O, jadi di
+                    // thread latar; hasilnya dikembalikan ke main thread
+                    // (task 3.2).
+                    val path = call.argument<String>("path")
+                    if (path == null) {
+                        result.success(null)
+                        return
+                    }
+                    Thread {
+                        val lyrics = readLyrics(path)
+                        activity.runOnUiThread { result.success(lyrics) }
+                    }.start()
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {
@@ -158,4 +178,111 @@ class DspPlugin(
     private fun toLong(value: Number?): Long = value?.toLong() ?: 0L
 
     private fun toFraction(value: Number?): Float = value?.toFloat() ?: 1.0f
+
+    /**
+     * Membaca lirik tertanam dari berkas audio [path] (absolut atau
+     * `content://` URI) dengan mem-parsing tag ID3v2 (frame `USLT`).
+     *
+     * Mengembalikan `null` bila tidak ada frame lirik atau terjadi
+     * kegagalan — **best effort**, tidak boleh menghentikan playback.
+     * `MediaMetadataRetriever` sengaja tidak dipakai: ia tidak mengekspos
+     * kunci lirik (tidak ada `METADATA_KEY_LYRICS` di AOSP).
+     */
+    private fun readLyrics(path: String): String? {
+        return try {
+            val uri = if (path.startsWith("content:") || path.startsWith("file:")) {
+                Uri.parse(path)
+            } else {
+                Uri.fromFile(File(path))
+            }
+            activity.contentResolver.openInputStream(uri)?.use { stream ->
+                parseId3Lyrics(stream)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membaca lirik: $path", e)
+            null
+        }
+    }
+
+    private fun parseId3Lyrics(stream: java.io.InputStream): String? {
+        val header = ByteArray(10)
+        if (stream.read(header) != 10) return null
+        val id3 = header[0] == 'I'.code.toByte() &&
+            header[1] == 'D'.code.toByte() &&
+            header[2] == '3'.code.toByte()
+        if (!id3) return null
+
+        val version = header[3].toInt() and 0xFF
+        val tagSize = synchsafeToInt(header, 6)
+        if (tagSize <= 0) return null
+
+        val readSize = min(tagSize, MAX_TAG_BYTES)
+        val data = ByteArray(readSize)
+        var filled = 0
+        while (filled < readSize) {
+            val n = stream.read(data, filled, readSize - filled)
+            if (n <= 0) break
+            filled += n
+        }
+
+        var offset = 0
+        while (offset + 10 <= filled) {
+            // Frame ID diawali huruf besar; 0 = padding/akhir tag.
+            if (data[offset] <= 0) break
+            val frameId = String(data, offset, 4, Charsets.ISO_8859_1)
+            val size = if (version >= 4) synchsafeToInt(data, offset + 4)
+                       else beToInt(data, offset + 4)
+            if (size <= 0 || offset + 10 + size > filled) break
+            if (frameId == "USLT") {
+                return parseUsltFrame(data, offset + 10, size)
+            }
+            offset += 10 + size
+        }
+        return null
+    }
+
+    /// Memecah frame `USLT`: encoding(1) + bahasa(3) + deskripsi +
+    /// teks lirik.
+    private fun parseUsltFrame(data: ByteArray, start: Int, size: Int): String? {
+        if (size < 5) return null
+        val encoding = data[start].toInt() and 0xFF
+        val (charset, termLen) = when (encoding) {
+            0 -> Charsets.ISO_8859_1 to 1
+            1 -> Charsets.UTF_16 to 2
+            2 -> Charsets.UTF_16BE to 2
+            3 -> Charsets.UTF_8 to 1
+            else -> Charsets.ISO_8859_1 to 1
+        }
+
+        // Lewati deskripsi (null-terminated) setelah byte bahasa.
+        var i = start + 4
+        while (i + termLen <= start + size) {
+            val terminated = if (termLen == 1) {
+                data[i] == 0.toByte()
+            } else {
+                data[i] == 0.toByte() && data[i + 1] == 0.toByte()
+            }
+            if (terminated) break
+            i++
+        }
+        val textStart = i + termLen
+        if (textStart >= start + size) return null
+
+        val text = String(data, textStart, start + size - textStart, charset)
+        return text.trim().takeIf { it.isNotEmpty() }
+    }
+
+    /// 4-byte big-endian ke int.
+    private fun beToInt(data: ByteArray, offset: Int): Int =
+        ((data[offset].toInt() and 0xFF) shl 24) or
+            ((data[offset + 1].toInt() and 0xFF) shl 16) or
+            ((data[offset + 2].toInt() and 0xFF) shl 8) or
+            (data[offset + 3].toInt() and 0xFF)
+
+    /// 4-byte synchsafe (bit tertinggi tiap byte = 0) ke int.
+    private fun synchsafeToInt(data: ByteArray, offset: Int): Int =
+        ((data[offset].toInt() and 0x7F) shl 21) or
+            ((data[offset + 1].toInt() and 0x7F) shl 14) or
+            ((data[offset + 2].toInt() and 0x7F) shl 7) or
+            (data[offset + 3].toInt() and 0x7F)
 }

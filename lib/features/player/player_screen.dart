@@ -6,6 +6,7 @@ import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/frequency_preset.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/lyrics/lyrics_panel.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
 import 'package:lirih/features/player/queue_sheet.dart';
@@ -40,7 +41,10 @@ class PlayerScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _AlbumArt(track: track),
+                if (ref.watch(lyricsVisibilityProvider))
+                  const AspectRatio(aspectRatio: 1, child: LyricsPanel())
+                else
+                  _AlbumArt(track: track),
                 const SizedBox(height: 20),
                 _TrackMeta(track: track),
                 const SizedBox(height: 12),
@@ -57,7 +61,7 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-/// Baris aksi tambahan: antrean + sleep timer.
+/// Baris aksi tambahan: antrean, lirik, sleep timer.
 class _PlayerActions extends StatelessWidget {
   const _PlayerActions();
 
@@ -65,7 +69,13 @@ class _PlayerActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [_QueueButton(), SizedBox(width: 8), _SleepTimerButton()],
+      children: [
+        _QueueButton(),
+        SizedBox(width: 8),
+        _LyricsButton(),
+        SizedBox(width: 8),
+        _SleepTimerButton(),
+      ],
     );
   }
 }
@@ -84,7 +94,33 @@ class _QueueButton extends StatelessWidget {
   }
 }
 
-/// Placeholder sampul album bila trek belum punya artwork.
+/// Tombol memunculkan/menyembunyikan panel lirik (task 3.3).
+class _LyricsButton extends ConsumerWidget {
+  const _LyricsButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final visible = ref.watch(lyricsVisibilityProvider);
+    final notifier = ref.read(lyricsVisibilityProvider.notifier);
+
+    return TextButton.icon(
+      onPressed: notifier.toggle,
+      icon: Icon(
+        visible ? Icons.lyrics : Icons.lyrics_outlined,
+        color: visible ? AppColors.nila400 : AppColors.soga200,
+        size: 20,
+      ),
+      label: Text(
+        'Lirik',
+        style: TextStyle(
+          color: visible ? AppColors.nila400 : AppColors.soga200,
+          fontWeight: visible ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    );
+  }
+}
+
 /// Sleep timer — pilih durasi; playback dijeda otomatis saat habis (2.9).
 class _SleepTimerButton extends ConsumerWidget {
   const _SleepTimerButton();
