@@ -8,6 +8,9 @@ import 'package:lirih/domain/entities/frequency_preset.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
+import 'package:lirih/features/player/queue_sheet.dart';
+import 'package:lirih/features/player/sleep_timer_controller.dart';
+import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Layar Pemutar (task 2.7) + **penyetel frekuensi** 440/432/528 Hz
 /// (task 2.8) — fitur pembeda Lirih.
@@ -43,6 +46,8 @@ class PlayerScreen extends ConsumerWidget {
                 _ProgressBar(player: player),
                 const SizedBox(height: 8),
                 _Controls(player: player),
+                const SizedBox(height: 4),
+                const _PlayerActions(),
                 const SizedBox(height: 28),
                 const _FrequencyTuner(),
               ],
@@ -51,7 +56,88 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
+/// Baris aksi tambahan: antrean + sleep timer.
+class _PlayerActions extends StatelessWidget {
+  const _PlayerActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [_QueueButton(), SizedBox(width: 8), _SleepTimerButton()],
+    );
+  }
+}
+
+/// Tombol membuka sheet antrean (task 2.9).
+class _QueueButton extends StatelessWidget {
+  const _QueueButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: () => showQueueSheet(context),
+      icon: const Icon(Icons.queue_music, color: AppColors.soga200),
+      label: const Text('Antrean', style: TextStyle(color: AppColors.soga200)),
+    );
+  }
+}
+
 /// Placeholder sampul album bila trek belum punya artwork.
+/// Sleep timer — pilih durasi; playback dijeda otomatis saat habis (2.9).
+class _SleepTimerButton extends ConsumerWidget {
+  const _SleepTimerButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final remaining = ref.watch(sleepTimerControllerProvider);
+    final notifier = ref.read(sleepTimerControllerProvider.notifier);
+    final active = remaining != null;
+
+    return PopupMenuButton<int>(
+      tooltip: 'Sleep timer',
+      onSelected: (minutes) {
+        if (minutes == 0) {
+          notifier.cancel();
+        } else {
+          notifier.start(Duration(minutes: minutes));
+        }
+      },
+      itemBuilder: (_) => <PopupMenuEntry<int>>[
+        const PopupMenuItem<int>(value: 0, child: Text('Mati')),
+        ...kSleepTimerMinutes.map(
+          (minutes) =>
+              PopupMenuItem<int>(value: minutes, child: Text('$minutes menit')),
+        ),
+      ],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            active ? Icons.timer : Icons.timer_outlined,
+            color: active ? AppColors.kunir500 : AppColors.soga200,
+            size: 20,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            active ? 'Timer ${_formatRemaining(remaining)}' : 'Sleep timer',
+            style: TextStyle(
+              color: active ? AppColors.kunir500 : AppColors.soga200,
+              fontSize: 14,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sisa timer sebagai `m:ss`.
+  String _formatRemaining(Duration d) =>
+      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+}
+
+/// Sampul album trek aktif (task 3.4) — ukuran penuh sesuai lebar layar.
 class _AlbumArt extends StatelessWidget {
   const _AlbumArt({required this.track});
 
@@ -59,19 +145,11 @@ class _AlbumArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.soga700, AppColors.kunir700],
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Icon(Icons.music_note, size: 88, color: AppColors.soga50),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.maxWidth;
+        return TrackArtwork(track: track, size: size);
+      },
     );
   }
 }

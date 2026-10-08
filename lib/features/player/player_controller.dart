@@ -120,6 +120,72 @@ class PlayerController extends _$PlayerController {
     state = state.copyWith(isPlaying: false, positionMs: 0);
   }
 
+  /// Menjeda playback bila sedang memutar (mis. sleep timer selesai).
+  Future<void> pauseIfPlaying() async {
+    if (state.isPlaying) await togglePlay();
+  }
+
+  /// Memutar trek pada [index] di antrean saat ini (task 2.9).
+  Future<void> jumpTo(int index) async {
+    final queue = state.queue;
+    if (index < 0 || index >= queue.length) return;
+    await playTrack(queue[index], queue: queue);
+  }
+
+  /// Mengatur ulang antrean via drag (task 2.9).
+  ///
+  /// Memakai konvensi `ReorderableListView.onReorderItem`: [newIndex] sudah
+  /// disesuaikan untuk item yang dihapus dari [oldIndex], sehingga cukup
+  /// `removeAt` lalu `insert`. Trek aktif tetap terpilih.
+  Future<void> reorderQueue(int oldIndex, int newIndex) async {
+    final queue = List<Track>.of(state.queue);
+    if (oldIndex < 0 || oldIndex >= queue.length) return;
+    if (newIndex < 0 || newIndex > queue.length) return;
+
+    final current = state.currentTrack;
+    final moved = queue.removeAt(oldIndex);
+    queue.insert(newIndex, moved);
+
+    state = state.copyWith(
+      queue: queue,
+      currentIndex: current == null ? -1 : queue.indexOf(current),
+    );
+  }
+
+  /// Menghapus trek pada [index] dari antrean (task 2.9).
+  ///
+  /// Bila trek aktif yang dihapus, trek pengganti pada indeks tersebut
+  /// diputar; bila antrean jadi kosong, playback dihentikan.
+  Future<void> removeFromQueue(int index) async {
+    final queue = List<Track>.of(state.queue);
+    if (index < 0 || index >= queue.length) return;
+
+    if (index == state.currentIndex) {
+      queue.removeAt(index);
+      if (queue.isEmpty) {
+        await _dsp.stop();
+        _stopPositionTimer();
+        state = state.copyWith(
+          queue: const <Track>[],
+          currentIndex: -1,
+          isPlaying: false,
+        );
+        return;
+      }
+      final replacement =
+          queue[index < queue.length ? index : queue.length - 1];
+      await playTrack(replacement, queue: queue);
+      return;
+    }
+
+    final current = state.currentTrack;
+    queue.removeAt(index);
+    state = state.copyWith(
+      queue: queue,
+      currentIndex: current == null ? -1 : queue.indexOf(current),
+    );
+  }
+
   // ── Polling posisi ────────────────────────────────────────────────
 
   /// Minta izin notifikasi sekali (Android 13+) agar kontrol media tampil.

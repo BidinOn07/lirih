@@ -13,13 +13,14 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
     });
 
-    testWidgets('navigasi bawah 3 tab & tab Pustaka aktif (task 2.4)', (
+    testWidgets('navigasi bawah 4 tab & tab Pustaka aktif (task 2.4)', (
       tester,
     ) async {
       await tester.pumpWidget(const ProviderScope(child: LirihApp()));
 
       expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.byType(NavigationDestination), findsNWidgets(3));
+      expect(find.byType(NavigationDestination), findsNWidgets(4));
+      expect(find.text('Cari'), findsOneWidget);
       expect(find.text('PoC'), findsOneWidget);
       // Tab pertama (Pustaka) adalah layar awal.
       expect(find.byType(LibraryScreen), findsOneWidget);

@@ -7,8 +7,9 @@ part 'track.freezed.dart';
 /// Sebuah trek musik di pustaka pengguna (TDD §3.2).
 ///
 /// Entri domain utama yang mengalir melalui seluruh layer: pemindai pustaka,
-/// antrean, pemutar, dan riwayat. Identitasnya [id] (UUID v4 yang dibuat di
-/// aplikasi), bukan id MediaStore — agar stabil lintas pemindaian.
+/// antrean, pemutar, dan riwayat. Identitasnya [id] — dibuat deterministik
+/// dari konten trek (lihat `stableTrackId`), bukan id MediaStore — agar
+/// stabil lintas pemindaian.
 @freezed
 abstract class Track with _$Track {
   /// Membuat entri trek.
@@ -46,5 +47,12 @@ abstract class Track with _$Track {
   /// Absolute path atau `content://` URI berkas audio (v1 selalu lokal).
   String get sourcePath => switch (source) {
     LocalSource(:final filePath) => filePath,
+  };
+
+  /// ID MediaStore lagu — dipakai mengambil sampul album lewat
+  /// `queryArtwork` (task 3.4). `null` bila trek bukan dari MediaStore
+  /// (mis. dipilih via pemilih berkas SAF).
+  int? get mediaStoreId => switch (source) {
+    LocalSource(:final mediaStoreId) => mediaStoreId,
   };
 }

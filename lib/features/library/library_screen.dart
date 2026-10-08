@@ -6,6 +6,7 @@ import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/shared/widgets/track_artwork.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Layar Pustaka — daftar lagu di perangkat pengguna (task 2.5).
@@ -86,15 +87,7 @@ class _TrackRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.soga700,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.music_note, color: AppColors.kunir500),
-      ),
+      leading: TrackArtwork(track: track),
       title: Text(
         track.title,
         maxLines: 1,

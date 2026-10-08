@@ -17,5 +17,10 @@ sealed class TrackSource with _$TrackSource {
 
     /// Durasi dalam milidetik jika diketahui saat pemindaian.
     int? durationMs,
+
+    /// ID MediaStore lagu — dipakai mengambil sampul album via
+    /// `on_audio_query.queryArtwork` (task 3.4). `null` bila trek tidak
+    /// berasal dari MediaStore (mis. dipilih via SAF).
+    int? mediaStoreId,
   }) = LocalSource;
 }

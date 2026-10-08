@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/app.dart';
+import 'package:lirih/core/services/hive_service.dart';
 
 /// Titik masuk aplikasi **Lirih**.
 ///
@@ -9,10 +10,12 @@ import 'package:lirih/app.dart';
 /// provider — pemutar, pustaka lokal, antrean, dan penyetelan frekuensi —
 /// sudah tersedia sejak siklus hidup aplikasi dimulai.
 ///
-/// Tugas berat (inisialisasi Hive, permintaan izin baca media) dipindahkan ke
-/// task **0.6** dan **3.x**; saat ini hanya memastikan binding Flutter siap.
+/// Penyimpanan lokal (Hive) disiapkan di sini sekali saja (task 1.10)
+/// sehingga controller cukup membaca/menulis box yang sudah terbuka.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await HiveService.initialize();
 
   runApp(const ProviderScope(child: LirihApp()));
 }

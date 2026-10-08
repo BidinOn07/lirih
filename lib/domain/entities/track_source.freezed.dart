@@ -17,7 +17,10 @@ mixin _$TrackSource {
 
 /// Absolute path atau `content://` URI berkas audio.
  String get filePath;/// Durasi dalam milidetik jika diketahui saat pemindaian.
- int? get durationMs;
+ int? get durationMs;/// ID MediaStore lagu — dipakai mengambil sampul album via
+/// `on_audio_query.queryArtwork` (task 3.4). `null` bila trek tidak
+/// berasal dari MediaStore (mis. dipilih via SAF).
+ int? get mediaStoreId;
 /// Create a copy of TrackSource
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,20 +32,20 @@ $TrackSourceCopyWith<TrackSource> get copyWith => _$TrackSourceCopyWithImpl<Trac
 @override
 bool operator ==(Object other) {
   final _this = this as TrackSource;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackSource&&(identical(other.filePath, _this.filePath) || other.filePath == _this.filePath)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TrackSource&&(identical(other.filePath, _this.filePath) || other.filePath == _this.filePath)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.mediaStoreId, _this.mediaStoreId) || other.mediaStoreId == _this.mediaStoreId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as TrackSource;
-  return Object.hash(runtimeType,_this.filePath,_this.durationMs);
+  return Object.hash(runtimeType,_this.filePath,_this.durationMs,_this.mediaStoreId);
 }
 
 @override
 String toString() {
   final _this = this as TrackSource;
-  return 'TrackSource(filePath: ${_this.filePath}, durationMs: ${_this.durationMs})';
+  return 'TrackSource(filePath: ${_this.filePath}, durationMs: ${_this.durationMs}, mediaStoreId: ${_this.mediaStoreId})';
 }
 
 
@@ -53,7 +56,7 @@ abstract mixin class $TrackSourceCopyWith<$Res>  {
   factory $TrackSourceCopyWith(TrackSource value, $Res Function(TrackSource) _then) = _$TrackSourceCopyWithImpl;
 @useResult
 $Res call({
- String filePath, int? durationMs
+ String filePath, int? durationMs, int? mediaStoreId
 });
 
 
@@ -70,10 +73,11 @@ class _$TrackSourceCopyWithImpl<$Res>
 
 /// Create a copy of TrackSource
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? filePath = null,Object? durationMs = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? filePath = null,Object? durationMs = freezed,Object? mediaStoreId = freezed,}) {
   return _then(TrackSource.local(
 filePath: null == filePath ? _self.filePath : filePath // ignore: cast_nullable_to_non_nullable
 as String,durationMs: freezed == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
+as int?,mediaStoreId: freezed == mediaStoreId ? _self.mediaStoreId : mediaStoreId // ignore: cast_nullable_to_non_nullable
 as int?,
   ));
 }
@@ -156,10 +160,10 @@ return local(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String filePath,  int? durationMs)?  local,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String filePath,  int? durationMs,  int? mediaStoreId)?  local,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case LocalSource() when local != null:
-return local(_that.filePath,_that.durationMs);case _:
+return local(_that.filePath,_that.durationMs,_that.mediaStoreId);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return local(_that.filePath,_that.durationMs);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String filePath,  int? durationMs)  local,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String filePath,  int? durationMs,  int? mediaStoreId)  local,}) {final _that = this;
 switch (_that) {
 case LocalSource():
-return local(_that.filePath,_that.durationMs);}
+return local(_that.filePath,_that.durationMs,_that.mediaStoreId);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +198,10 @@ return local(_that.filePath,_that.durationMs);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String filePath,  int? durationMs)?  local,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String filePath,  int? durationMs,  int? mediaStoreId)?  local,}) {final _that = this;
 switch (_that) {
 case LocalSource() when local != null:
-return local(_that.filePath,_that.durationMs);case _:
+return local(_that.filePath,_that.durationMs,_that.mediaStoreId);case _:
   return null;
 
 }
@@ -209,13 +213,17 @@ return local(_that.filePath,_that.durationMs);case _:
 
 
 class LocalSource implements TrackSource {
-  const LocalSource({required this.filePath, this.durationMs});
+  const LocalSource({required this.filePath, this.durationMs, this.mediaStoreId});
   
 
 /// Absolute path atau `content://` URI berkas audio.
 @override final  String filePath;
 /// Durasi dalam milidetik jika diketahui saat pemindaian.
 @override final  int? durationMs;
+/// ID MediaStore lagu — dipakai mengambil sampul album via
+/// `on_audio_query.queryArtwork` (task 3.4). `null` bila trek tidak
+/// berasal dari MediaStore (mis. dipilih via SAF).
+@override final  int? mediaStoreId;
 
 /// Create a copy of TrackSource
 /// with the given fields replaced by the non-null parameter values.
@@ -227,18 +235,18 @@ $LocalSourceCopyWith<LocalSource> get copyWith => _$LocalSourceCopyWithImpl<Loca
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is LocalSource&&(identical(other.filePath, filePath) || other.filePath == filePath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is LocalSource&&(identical(other.filePath, filePath) || other.filePath == filePath)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.mediaStoreId, mediaStoreId) || other.mediaStoreId == mediaStoreId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,filePath,durationMs);
+    return Object.hash(runtimeType,filePath,durationMs,mediaStoreId);
 }
 
 @override
 String toString() {
-    return 'TrackSource.local(filePath: $filePath, durationMs: $durationMs)';
+    return 'TrackSource.local(filePath: $filePath, durationMs: $durationMs, mediaStoreId: $mediaStoreId)';
 }
 
 
@@ -249,7 +257,7 @@ abstract mixin class $LocalSourceCopyWith<$Res> implements $TrackSourceCopyWith<
   factory $LocalSourceCopyWith(LocalSource value, $Res Function(LocalSource) _then) = _$LocalSourceCopyWithImpl;
 @override @useResult
 $Res call({
- String filePath, int? durationMs
+ String filePath, int? durationMs, int? mediaStoreId
 });
 
 
@@ -266,10 +274,11 @@ class _$LocalSourceCopyWithImpl<$Res>
 
 /// Create a copy of TrackSource
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? filePath = null,Object? durationMs = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? filePath = null,Object? durationMs = freezed,Object? mediaStoreId = freezed,}) {
   return _then(LocalSource(
 filePath: null == filePath ? _self.filePath : filePath // ignore: cast_nullable_to_non_nullable
 as String,durationMs: freezed == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
+as int?,mediaStoreId: freezed == mediaStoreId ? _self.mediaStoreId : mediaStoreId // ignore: cast_nullable_to_non_nullable
 as int?,
   ));
 }

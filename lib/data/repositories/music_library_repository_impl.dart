@@ -81,7 +81,11 @@ class MusicLibraryRepositoryImpl implements MusicLibraryRepository {
           : song.artist!.trim(),
       album: (song.album ?? '').trim().isEmpty ? null : song.album!.trim(),
       durationMs: song.duration,
-      source: TrackSource.local(filePath: uri, durationMs: song.duration),
+      source: TrackSource.local(
+        filePath: uri,
+        durationMs: song.duration,
+        mediaStoreId: song.id,
+      ),
     );
   }
 }
