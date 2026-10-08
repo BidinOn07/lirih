@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lirih/shared/widgets/lirih_logo.dart';
+import 'package:lirih/shared/widgets/lirih_wordmark.dart';
 
 /// Widget root aplikasi **Lirih**.
 ///
@@ -7,7 +9,7 @@ import 'package:flutter/material.dart';
 /// dilakukan di sini ketika fitur di `lib/features/` mulai dibangun.
 ///
 /// Saat ini masih memakai placeholder — belum ada layar yang dirender selain
-/// [_HomePlaceholder].
+/// [_HomePlaceholder] yang menampilkan logo + wordmark (task **0N.5**).
 class LirihApp extends StatelessWidget {
   /// Membuat widget root [LirihApp].
   const LirihApp({super.key});
@@ -34,6 +36,17 @@ class _HomePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text(LirihApp.title)));
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LirihLogo(size: 112),
+            SizedBox(height: 20),
+            LirihWordmark(fontSize: 32),
+          ],
+        ),
+      ),
+    );
   }
 }

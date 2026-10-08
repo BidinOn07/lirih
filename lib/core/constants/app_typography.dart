@@ -24,7 +24,8 @@ abstract final class AppTypography {
 
   // ── Judul ─────────────────────────────────────────────────────
 
-  /// Judul layar pemutar dan wordmark di dalam aplikasi.
+  /// Judul layar pemutar (judul lagu / album). Wordmark aplikasi memakai
+  /// widget khusus `LirihWordmark` (task **0N.5**) — bukan gaya ini.
   static const TextStyle display = TextStyle(
     fontFamily: keluarga,
     fontSize: 30,
