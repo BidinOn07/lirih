@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
+import 'package:lirih/features/home/home_screen.dart';
 import 'package:lirih/features/library/library_screen.dart';
 import 'package:lirih/features/player/player_screen.dart';
 import 'package:lirih/features/poc_pitch/poc_pitch_screen.dart';
 import 'package:lirih/features/search/search_screen.dart';
 
-/// Shell navigasi utama (task 2.4) — empat tab dengan [IndexedStack].
+/// Shell navigasi utama (task 2.4) — lima tab dengan [IndexedStack].
 ///
 /// Tab "PoC" **sementara** (alat uji task 0.6/0.8); dihapus saat seluruh
 /// validasi perangkat selesai dan mesin dipindah ke plugin `lirih_audio`.
@@ -27,6 +28,7 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _index,
         children: const [
+          HomeScreen(),
           LibraryScreen(),
           SearchScreen(),
           PlayerScreen(),
@@ -42,6 +44,11 @@ class _MainShellState extends State<MainShell> {
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
           NavigationDestination(
             icon: Icon(Icons.library_music_outlined),
             selectedIcon: Icon(Icons.library_music),

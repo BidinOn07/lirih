@@ -8,7 +8,7 @@ part of 'sleep_timer_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Sleep timer (task 2.9) —menjeda playback otomatis setelah selang waktu.
+/// Sleep timer (task 2.9) — menjeda playback otomatis setelah selang waktu.
 ///
 /// Status berupa sisa durasi; `null` berarti timer tidak aktif. Saat habis,
 /// playback dijeda lewat [PlayerController.pauseIfPlaying] (frekuensi penalaan
@@ -17,14 +17,14 @@ part of 'sleep_timer_controller.dart';
 @ProviderFor(SleepTimerController)
 final sleepTimerControllerProvider = SleepTimerControllerProvider._();
 
-/// Sleep timer (task 2.9) —menjeda playback otomatis setelah selang waktu.
+/// Sleep timer (task 2.9) — menjeda playback otomatis setelah selang waktu.
 ///
 /// Status berupa sisa durasi; `null` berarti timer tidak aktif. Saat habis,
 /// playback dijeda lewat [PlayerController.pauseIfPlaying] (frekuensi penalaan
 /// tidak direset, sehingga melanjutkan tetap pada 432/528 Hz).
 final class SleepTimerControllerProvider
     extends $NotifierProvider<SleepTimerController, Duration?> {
-  /// Sleep timer (task 2.9) —menjeda playback otomatis setelah selang waktu.
+  /// Sleep timer (task 2.9) — menjeda playback otomatis setelah selang waktu.
   ///
   /// Status berupa sisa durasi; `null` berarti timer tidak aktif. Saat habis,
   /// playback dijeda lewat [PlayerController.pauseIfPlaying] (frekuensi penalaan
@@ -57,9 +57,9 @@ final class SleepTimerControllerProvider
 }
 
 String _$sleepTimerControllerHash() =>
-    r'b082045f9f16c3d19199e4570e2fde6f3eca5144';
+    r'528782e1b954fe3aee57a6d7762e52edd78e6582';
 
-/// Sleep timer (task 2.9) —menjeda playback otomatis setelah selang waktu.
+/// Sleep timer (task 2.9) — menjeda playback otomatis setelah selang waktu.
 ///
 /// Status berupa sisa durasi; `null` berarti timer tidak aktif. Saat habis,
 /// playback dijeda lewat [PlayerController.pauseIfPlaying] (frekuensi penalaan

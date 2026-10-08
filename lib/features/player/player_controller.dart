@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:lirih/core/audio/dsp_channel.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/home/recent_plays_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -71,6 +72,9 @@ class PlayerController extends _$PlayerController {
 
     await _dsp.play(track.sourcePath);
     await _dsp.setPitch(pitchRatioForFrequency(state.frequencyHz));
+    unawaited(
+      ref.read(recentPlaysControllerProvider.notifier).recordPlay(track),
+    );
     _startPositionTimer();
   }
 

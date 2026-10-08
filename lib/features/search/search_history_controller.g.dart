@@ -12,6 +12,10 @@ part of 'search_history_controller.dart';
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
 /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+///
+/// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
+/// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
+/// menghempaskan galat ke UI — fitur ini bersifat pelengkap, bukan inti.
 
 @ProviderFor(SearchHistoryController)
 final searchHistoryControllerProvider = SearchHistoryControllerProvider._();
@@ -20,12 +24,20 @@ final searchHistoryControllerProvider = SearchHistoryControllerProvider._();
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
 /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+///
+/// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
+/// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
+/// menghempaskan galat ke UI — fitur ini bersifat pelengkap, bukan inti.
 final class SearchHistoryControllerProvider
     extends $NotifierProvider<SearchHistoryController, List<String>> {
   /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
   ///
   /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
   /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+  ///
+  /// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
+  /// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
+  /// menghempaskan galat ke UI — fitur ini bersifat pelengkap, bukan inti.
   SearchHistoryControllerProvider._()
     : super(
         from: null,
@@ -54,12 +66,16 @@ final class SearchHistoryControllerProvider
 }
 
 String _$searchHistoryControllerHash() =>
-    r'dafe5e427d96cd1eebb5e5a7da18fb56da7bad23';
+    r'c32636d3ebb3d0fc2698a0d2574c5074fafd93d1';
 
 /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
 /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+///
+/// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
+/// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
+/// menghempaskan galat ke UI — fitur ini bersifat pelengkap, bukan inti.
 
 abstract class _$SearchHistoryController extends $Notifier<List<String>> {
   List<String> build();
