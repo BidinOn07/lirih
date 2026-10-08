@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:lirih/core/audio/dsp_channel.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/player/player_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'player_controller.g.dart';
@@ -25,6 +27,9 @@ class PlayerController extends _$PlayerController {
   Timer? _positionTimer;
 
   StreamSubscription<DspEventPayload>? _eventSub;
+
+  /// Apakah izin notifikasi sudah pernah diminta (hindari nag).
+  bool _notificationAsked = false;
 
   @override
   PlayerState build() {
@@ -50,6 +55,8 @@ class PlayerController extends _$PlayerController {
 
   /// Memutar [track] dalam konteks [queue] (default: trek tunggal).
   Future<void> playTrack(Track track, {List<Track>? queue}) async {
+    await _ensureNotificationPermission();
+
     final effectiveQueue = queue ?? <Track>[track];
     var index = effectiveQueue.indexOf(track);
     if (index < 0) index = 0;
@@ -114,6 +121,18 @@ class PlayerController extends _$PlayerController {
   }
 
   // ── Polling posisi ────────────────────────────────────────────────
+
+  /// Minta izin notifikasi sekali (Android 13+) agar kontrol media tampil.
+  /// Best-effort: playback tetap jalan bila ditolak.
+  Future<void> _ensureNotificationPermission() async {
+    if (_notificationAsked) return;
+    _notificationAsked = true;
+    if (!Platform.isAndroid) return;
+    final status = await Permission.notification.status;
+    if (status.isDenied) {
+      await Permission.notification.request();
+    }
+  }
 
   void _startPositionTimer() {
     _positionTimer?.cancel();

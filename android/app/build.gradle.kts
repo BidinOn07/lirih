@@ -54,6 +54,9 @@ dependencies {
     // diterbitkan di Maven (harus dibangun dari source media3 + NDK) —
     // lihat catatan risiko di AGENTS.md. Ditangani terpisah untuk v1.
     implementation("androidx.media3:media3-exoplayer:1.11.1")
+    // MediaSession + foreground service untuk background playback, notifikasi,
+    // dan kontrol lockscreen (task 1.7).
+    implementation("androidx.media3:media3-session:1.11.1")
 }
 
 flutter {

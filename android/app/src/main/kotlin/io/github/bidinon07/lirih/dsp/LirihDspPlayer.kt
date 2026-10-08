@@ -2,6 +2,7 @@ package io.github.bidinon07.lirih.dsp
 
 import android.content.Context
 import android.util.Log
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -40,6 +41,10 @@ class LirihDspPlayer(private val context: Context) {
     private fun ensurePlayer(): ExoPlayer {
         player?.let { return it }
         val newPlayer = ExoPlayer.Builder(context).build()
+        // Handle audio focus otomatis (jeda saat notifikasi/panggilan) dan
+        // jeda saat headphone dicabut (task 1.7).
+        newPlayer.setAudioAttributes(AudioAttributes.DEFAULT, true)
+        newPlayer.setHandleAudioBecomingNoisy(true)
         newPlayer.addListener(
             object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
@@ -57,6 +62,13 @@ class LirihDspPlayer(private val context: Context) {
         player = newPlayer
         return newPlayer
     }
+
+    /**
+     * Instance [ExoPlayer] aktif (dibuat malas). Dipakai
+     * [LirihPlaybackService] untuk membangun [MediaSession] agar kontrol
+     * media (notifikasi/lockscreen) menggerakkan pemutar yang sama.
+     */
+    internal fun sessionPlayer(): ExoPlayer = ensurePlayer()
 
     /** Memutar berkas audio di [path] (absolute filesystem path). */
     fun playFile(path: String) {

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -37,6 +38,9 @@ class DspPlugin(
     private val player = LirihDspPlayer(activity as Context)
     private var channel: MethodChannel? = null
 
+    /** Apakah foreground service pemutar sudah berjalan. */
+    private var serviceRunning = false
+
     /** Mendaftarkan channel pada [messenger] dan mulai mendengar event. */
     fun attach(messenger: BinaryMessenger) {
         val ch = MethodChannel(messenger, DSP_CHANNEL)
@@ -45,14 +49,39 @@ class DspPlugin(
         player.onEvent = { event, data ->
             ch.invokeMethod("onEvent", mapOf("event" to event, "data" to data))
         }
+        // Player dipublikasikan agar LirihPlaybackService dapat membangun
+        // MediaSession di sekitar instance yang sama (task 1.7).
+        PlaybackHost.player = player
     }
 
     /** Melepas channel dan melepaskan sumber daya player. */
     fun detach() {
+        stopPlaybackService()
         player.onEvent = null
         channel?.setMethodCallHandler(null)
         channel = null
         player.release()
+        PlaybackHost.player = null
+    }
+
+    /** Memulai foreground service agar playback bertahan di background. */
+    private fun startPlaybackService() {
+        if (serviceRunning) return
+        serviceRunning = true
+        PlaybackHost.player = player
+        val intent = Intent(activity, LirihPlaybackService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            activity.startForegroundService(intent)
+        } else {
+            activity.startService(intent)
+        }
+    }
+
+    /** Menghentikan foreground service bila playback selesai sepenuhnya. */
+    private fun stopPlaybackService() {
+        if (!serviceRunning) return
+        serviceRunning = false
+        activity.stopService(Intent(activity, LirihPlaybackService::class.java))
     }
 
     /**
@@ -67,6 +96,7 @@ class DspPlugin(
         if (uri != null) {
             Log.i(TAG, "Berkas dipilih: $uri")
             player.playFile(uri.toString())
+            startPlaybackService()
             channel?.invokeMethod("onFilePicked", mapOf("uri" to uri.toString()))
         } else {
             channel?.invokeMethod("onFilePicked", mapOf("uri" to null))
@@ -79,6 +109,7 @@ class DspPlugin(
             when (call.method) {
                 "play" -> {
                     player.playFile(call.argument<String>("path")!!)
+                    startPlaybackService()
                     result.success(null)
                 }
                 "pickFile" -> {
@@ -99,6 +130,7 @@ class DspPlugin(
                 }
                 "stop" -> {
                     player.stop()
+                    stopPlaybackService()
                     result.success(null)
                 }
                 "seek" -> {
