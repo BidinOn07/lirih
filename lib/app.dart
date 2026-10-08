@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lirih/features/poc_pitch/poc_pitch_screen.dart';
 import 'package:lirih/shared/widgets/lirih_logo.dart';
 import 'package:lirih/shared/widgets/lirih_wordmark.dart';
 
@@ -36,14 +37,23 @@ class _HomePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            LirihLogo(size: 112),
-            SizedBox(height: 20),
-            LirihWordmark(fontSize: 32),
+            const LirihLogo(size: 112),
+            const SizedBox(height: 20),
+            const LirihWordmark(fontSize: 32),
+            const SizedBox(height: 32),
+            // SEMENTARA — pintu ke PoC pitch shift (task 0.6/0.8).
+            // Dihapus saat navigasi GoRouter task 2.4 dibangun.
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PoCPitchScreen()),
+              ),
+              child: const Text('PoC — Pitch Shift'),
+            ),
           ],
         ),
       ),

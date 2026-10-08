@@ -1,5 +1,22 @@
 package io.github.bidinon07.lirih
 
+import io.github.bidinon07.lirih.dsp.DspPlugin
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity()
+class MainActivity : FlutterActivity() {
+
+    private var dspPlugin: DspPlugin? = null
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        // PoC task 0.6/0.8 — MethodChannel DSP pitch shift.
+        dspPlugin = DspPlugin(this).also { it.attach(flutterEngine.dartExecutor) }
+    }
+
+    override fun onDestroy() {
+        dspPlugin?.detach()
+        dspPlugin = null
+        super.onDestroy()
+    }
+}

@@ -44,6 +44,16 @@ kotlin {
     }
 }
 
+dependencies {
+    // ── Media3 / ExoPlayer (task 0.6 — PoC pitch shift) ───────────────
+    // 1.11.1 (10 Sep 2026) — stable terbaru, kompatibel compileSdk 36.
+    // Lisensi Apache-2.0 → dicatat di THIRD_PARTY_NOTICES.md (R9).
+    // Hanya modul inti: MP3/WAV/AAC/M4A ditangani extractor bawaan +
+    // dekoder platform (MediaCodec). FLAC butuh media3-decoder-flac
+    // bila perlu (ditambahkan saat validasi 0.9).
+    implementation("androidx.media3:media3-exoplayer:1.11.1")
+}
+
 flutter {
     source = "../.."
 }

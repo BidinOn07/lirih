@@ -48,8 +48,8 @@ Aplikasi ini dibangun dengan perangkat lunak sumber terbuka berikut. Salinan pen
 
 | Komponen | Lisensi | Catatan |
 |---|---|---|
-| `androidx.media3:media3-exoplayer` | **Apache-2.0** | Mesin pemutaran + `PitchAudioProcessor` |
-| `androidx.media3:media3-common` | **Apache-2.0** | Kelas penunjang Media3 |
+| `androidx.media3:media3-exoplayer` **1.11.1** | **Apache-2.0** | Mesin pemutaran ExoPlayer (task 0.6) — pitch via `PlaybackParameters` |
+| `androidx.media3:media3-common` *(transitif)* | **Apache-2.0** | `PlaybackParameters`, `MediaItem`, `Player` |
 
 ---
 
