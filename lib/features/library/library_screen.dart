@@ -7,6 +7,9 @@ import 'package:lirih/core/errors/failures.dart';
 import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/playlist.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/library/album_detail_screen.dart';
+import 'package:lirih/features/library/artist_detail_screen.dart';
+import 'package:lirih/features/library/group_card.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
 import 'package:lirih/features/library/sort_mode.dart';
 import 'package:lirih/features/player/player_controller.dart';
@@ -57,11 +60,14 @@ class LibraryScreen extends ConsumerWidget {
       error is Failure ? error : const ScanFailure();
 }
 
-/// Isi Pustaka: strip playlist di puncak, pemilih bagian
-/// (Lagu/Artis/Album), lalu isi bagian yang dipilih (task 2.5).
+/// Isi Pustaka: pemilih bagian (Lagu/Artis/Album/Playlist), lalu isi bagian
+/// yang dipilih (task 2.5).
 ///
 /// Artis & album diturunkan dari daftar trek yang sudah dipindai
 /// (pengelompokan di memori) sehingga tidak butuh kueri MediaStore tambahan.
+/// Artis ditampilkan sebagai grid; menekannya membuka detail artis berisi
+/// grid album, dan sebuah album membuka daftar trek album (terurut per
+/// nomor trek). Playlist ditampilkan sebagai grid dengan kartu "buat baru".
 class _LibraryContent extends ConsumerStatefulWidget {
   const _LibraryContent({required this.tracks});
 
@@ -72,7 +78,7 @@ class _LibraryContent extends ConsumerStatefulWidget {
 }
 
 class _LibraryContentState extends ConsumerState<_LibraryContent> {
-  /// 0 = Lagu, 1 = Artis, 2 = Album.
+  /// 0 = Lagu, 1 = Artis, 2 = Album, 3 = Playlist.
   int _section = 0;
 
   SortMode _sort = SortMode.title;
@@ -119,7 +125,6 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        const SliverToBoxAdapter(child: _PlaylistsStrip()),
         SliverToBoxAdapter(
           child: _SectionTabs(
             section: _section,
@@ -136,18 +141,31 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
     switch (_section) {
       case 1:
         return [
-          _GroupsSliver(
+          _GroupsGrid(
             groups: _groupedBy((track) => track.artist),
-            icon: Icons.person_outline,
+            emptyHint: 'Belum ada artis.',
+            onTap: (group) => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ArtistDetailScreen(artist: group.key),
+              ),
+            ),
           ),
         ];
       case 2:
         return [
-          _GroupsSliver(
+          _GroupsGrid(
             groups: _groupedBy((track) => track.album ?? 'Tanpa album'),
-            icon: Icons.album_outlined,
+            emptyHint: 'Belum ada album.',
+            onTap: (group) => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    AlbumDetailScreen(album: group.key, tracks: group.value),
+              ),
+            ),
           ),
         ];
+      case 3:
+        return [const _PlaylistsGrid()];
       default:
         final sorted = _sortedTracks();
         return [
@@ -175,7 +193,7 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
   }
 }
 
-/// Pemilih bagian Pustaka: Lagu / Artis / Album.
+/// Pemilih bagian Pustaka: Lagu / Artis / Album / Playlist.
 class _SectionTabs extends StatelessWidget {
   const _SectionTabs({required this.section, required this.onChanged});
 
@@ -183,7 +201,7 @@ class _SectionTabs extends StatelessWidget {
 
   final ValueChanged<int> onChanged;
 
-  static const _labels = <String>['Lagu', 'Artis', 'Album'];
+  static const _labels = <String>['Lagu', 'Artis', 'Album', 'Playlist'];
 
   @override
   Widget build(BuildContext context) {
@@ -213,73 +231,56 @@ class _SectionTabs extends StatelessWidget {
   }
 }
 
-/// Strip horizontal playlist (task 3.1) + kartu "buat baru".
-class _PlaylistsStrip extends ConsumerWidget {
-  const _PlaylistsStrip();
+/// Grid playlist (task 3.1): kartu "＋ Playlist baru" di depan, disusul
+/// playlist yang sudah dibuat. Menekan playlist membuka detailnya.
+class _PlaylistsGrid extends ConsumerWidget {
+  const _PlaylistsGrid();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final playlists = ref.watch(playlistsControllerProvider);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Playlist',
-            style: TextStyle(
-              color: AppColors.kunir500,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 84,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 20),
-              itemCount: playlists.length + 1,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _NewPlaylistCard(
-                    onTap: () async {
-                      final created = await showPlaylistFormSheet(context);
-                      if (created != null && context.mounted) {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) =>
-                                PlaylistDetailScreen(playlistId: created.id),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                }
-                final playlist = playlists[index - 1];
-                return _PlaylistCard(
-                  playlist: playlist,
-                  onTap: () => Navigator.of(context).push(
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.85,
+        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index == 0) {
+            return _NewPlaylistCard(
+              onTap: () async {
+                final created = await showPlaylistFormSheet(context);
+                if (created != null && context.mounted) {
+                  await Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) =>
-                          PlaylistDetailScreen(playlistId: playlist.id),
+                          PlaylistDetailScreen(playlistId: created.id),
                     ),
-                  ),
-                );
+                  );
+                }
               },
+            );
+          }
+          final playlist = playlists[index - 1];
+          return _PlaylistCard(
+            playlist: playlist,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => PlaylistDetailScreen(playlistId: playlist.id),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+          );
+        }, childCount: playlists.length + 1),
       ),
     );
   }
 }
 
-/// Kartu "＋ Playlist baru".
+/// Kartu "＋ Playlist baru" dalam grid.
 class _NewPlaylistCard extends StatelessWidget {
   const _NewPlaylistCard({required this.onTap});
 
@@ -290,8 +291,6 @@ class _NewPlaylistCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120,
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.soga800,
           borderRadius: BorderRadius.circular(12),
@@ -300,11 +299,11 @@ class _NewPlaylistCard extends StatelessWidget {
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add, color: AppColors.kunir500, size: 24),
+            Icon(Icons.add, color: AppColors.kunir500, size: 26),
             SizedBox(height: 6),
             Text(
               'Playlist baru',
-              style: TextStyle(color: AppColors.kunir500, fontSize: 12),
+              style: TextStyle(color: AppColors.kunir500, fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ],
@@ -314,7 +313,7 @@ class _NewPlaylistCard extends StatelessWidget {
   }
 }
 
-/// Kartu satu playlist.
+/// Kartu satu playlist dalam grid.
 class _PlaylistCard extends StatelessWidget {
   const _PlaylistCard({required this.playlist, required this.onTap});
 
@@ -327,7 +326,6 @@ class _PlaylistCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.soga850,
@@ -337,7 +335,7 @@ class _PlaylistCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.queue_music, color: AppColors.nila400, size: 24),
+            const Icon(Icons.queue_music, color: AppColors.nila400, size: 26),
             const SizedBox(height: 6),
             Text(
               playlist.name,
@@ -345,7 +343,7 @@ class _PlaylistCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: AppColors.soga50,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -432,52 +430,73 @@ class _TracksHeader extends ConsumerWidget {
   }
 }
 
-/// Daftar kelompok (artis atau album) beserta jumlah treknya (task 2.5).
+/// Grid kelompok (artis atau album) beserta jumlah treknya (task 2.5).
 ///
-/// Menekan sebuah kelompok memutar seluruh trek di dalamnya, dimulai dari
-/// trek pertama kelompok tersebut.
-class _GroupsSliver extends ConsumerWidget {
-  const _GroupsSliver({required this.groups, required this.icon});
+/// Menekan sebuah kartu membuka layar detail sesuai [onTap] — detail
+/// artis (grid album) untuk bagian Artis, atau detail album (daftar
+/// trek) untuk bagian Album.
+class _GroupsGrid extends StatelessWidget {
+  const _GroupsGrid({
+    required this.groups,
+    required this.emptyHint,
+    required this.onTap,
+  });
 
   /// Nama kelompok → trek-treknya, sudah terurut abjad.
   final List<MapEntry<String, List<Track>>> groups;
 
-  /// Ikon pembeda (artis vs album).
-  final IconData icon;
+  /// Pesan saat tidak ada kelompok (pustaka kosong).
+  final String emptyHint;
+
+  /// Aksi saat sebuah kelompok ditekan.
+  final void Function(MapEntry<String, List<Track>> group) onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return SliverList.separated(
-      itemCount: groups.length,
-      separatorBuilder: (_, _) =>
-          const Divider(color: AppColors.soga700, height: 1),
-      itemBuilder: (context, index) {
-        final group = groups[index];
-        final tracks = group.value;
-        return ListTile(
-          onTap: () => ref
-              .read(playerControllerProvider.notifier)
-              .playTrack(tracks.first, queue: tracks),
-          leading: CircleAvatar(
-            backgroundColor: AppColors.soga800,
-            child: Icon(icon, color: AppColors.kunir500, size: 20),
-          ),
-          title: Text(
-            group.key,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.soga50,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          subtitle: Text(
-            '${tracks.length} trek',
-            style: const TextStyle(color: AppColors.soga300, fontSize: 13),
-          ),
-        );
-      },
+  Widget build(BuildContext context) {
+    if (groups.isEmpty) {
+      return SliverToBoxAdapter(child: _EmptyHint(text: emptyHint));
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.78,
+        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final group = groups[index];
+          return GroupCard(
+            title: group.key,
+            subtitle: '${group.value.length} trek',
+            representative: group.value.first,
+            onTap: () => onTap(group),
+          );
+        }, childCount: groups.length),
+      ),
+    );
+  }
+}
+
+/// Pesan kosong untuk sebuah bagian.
+class _EmptyHint extends StatelessWidget {
+  const _EmptyHint({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.soga300, fontSize: 15),
+        ),
+      ),
     );
   }
 }

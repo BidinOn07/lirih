@@ -60,7 +60,7 @@ final class PlaylistsControllerProvider
 }
 
 String _$playlistsControllerHash() =>
-    r'3e776c85922bcf1114c98fd08eedb1e471017950';
+    r'255c6484cdee2ac23057d3c949c6bd5cff0d4f12';
 
 /// Daftar putar pengguna (task 3.1) — disimpan di `playlistsBox`.
 ///

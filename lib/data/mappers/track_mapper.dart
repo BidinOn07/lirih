@@ -15,6 +15,8 @@ abstract final class TrackMapper {
     'title': track.title,
     'artist': track.artist,
     'album': track.album,
+    'trackNumber': track.trackNumber,
+    'fileExtension': track.fileExtension,
     'filePath': track.sourcePath,
     'mediaStoreId': track.mediaStoreId,
     'durationMs': track.durationMs,
@@ -37,6 +39,8 @@ abstract final class TrackMapper {
       title: title,
       artist: artist,
       album: json['album'] as String?,
+      trackNumber: json['trackNumber'] as int?,
+      fileExtension: (json['fileExtension'] as String?)?.trim(),
       durationMs: json['durationMs'] as int?,
       source: TrackSource.local(
         filePath: filePath,

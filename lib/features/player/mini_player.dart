@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
+import 'package:lirih/features/player/track_info_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Bar pemutar ringkas yang muncul di atas navigasi bawah (task 2.7).
@@ -12,7 +13,8 @@ import 'package:lirih/shared/widgets/track_artwork.dart';
 /// pengguna memutar lagu dari tab mana pun, dan hilang saat antrean
 /// dikosongkan. Menekan bar (di luar tombol aksi) membuka layar Pemutar
 /// penuh; tombol aksi memberi kontrol cepat tanpa berpindah layar:
-/// acak, sebelumnya, putar/jeda, berikutnya, dan mode pengulangan.
+/// acak, sebelumnya, putar/jeda, berikutnya, mode pengulangan, dan info
+/// lagu (tombol opsi).
 class MiniPlayerBar extends ConsumerWidget {
   /// Membuat bar [MiniPlayerBar].
   const MiniPlayerBar({required this.onOpenPlayer, super.key});
@@ -33,10 +35,10 @@ class MiniPlayerBar extends ConsumerWidget {
       child: InkWell(
         onTap: onOpenPlayer,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
+          padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
           child: Row(
             children: [
-              TrackArtwork(track: track, size: 44),
+              TrackArtwork(track: track, size: 52),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -67,14 +69,14 @@ class MiniPlayerBar extends ConsumerWidget {
               ),
               _MiniIconButton(
                 icon: Icons.shuffle,
-                iconSize: 18,
+                iconSize: 16,
                 active: player.isShuffling,
                 tooltip: player.isShuffling ? 'Acak: aktif' : 'Acak: mati',
                 onPressed: notifier.toggleShuffle,
               ),
               _MiniIconButton(
                 icon: Icons.skip_previous_rounded,
-                iconSize: 24,
+                iconSize: 22,
                 tooltip: 'Sebelumnya',
                 onPressed: notifier.skipPrevious,
               ),
@@ -82,14 +84,14 @@ class MiniPlayerBar extends ConsumerWidget {
                 icon: player.isPlaying
                     ? Icons.pause_rounded
                     : Icons.play_arrow_rounded,
-                iconSize: 28,
+                iconSize: 26,
                 primary: true,
                 tooltip: player.isPlaying ? 'Jeda' : 'Putar',
                 onPressed: notifier.togglePlay,
               ),
               _MiniIconButton(
                 icon: Icons.skip_next_rounded,
-                iconSize: 24,
+                iconSize: 22,
                 tooltip: 'Berikutnya',
                 onPressed: notifier.skipNext,
               ),
@@ -97,7 +99,7 @@ class MiniPlayerBar extends ConsumerWidget {
                 icon: player.repeatMode == LoopMode.one
                     ? Icons.repeat_one_rounded
                     : Icons.repeat_rounded,
-                iconSize: 18,
+                iconSize: 16,
                 active: player.repeatMode != LoopMode.off,
                 tooltip: player.repeatMode == LoopMode.off
                     ? 'Ulang: mati'
@@ -105,6 +107,12 @@ class MiniPlayerBar extends ConsumerWidget {
                     ? 'Ulang: semua trek'
                     : 'Ulang: satu trek',
                 onPressed: notifier.toggleRepeat,
+              ),
+              _MiniIconButton(
+                icon: Icons.more_vert,
+                iconSize: 18,
+                tooltip: 'Info lagu',
+                onPressed: () => showTrackInfoSheet(context, track),
               ),
             ],
           ),
@@ -116,7 +124,7 @@ class MiniPlayerBar extends ConsumerWidget {
 
 /// Tombol ikon ukuran kompak untuk bar mini player.
 ///
-/// Ukuran default [IconButton] (48 dp) terlalu lebar untuk lima tombol
+/// Ukuran default [IconButton] (48 dp) terlalu lebar untuk enam tombol
 /// sekaligus; tombol ini dipadatkan agar muat tanpa terasa sempit.
 class _MiniIconButton extends StatelessWidget {
   /// Membuat tombol [icon] dengan handler [onPressed].
@@ -157,8 +165,8 @@ class _MiniIconButton extends StatelessWidget {
       icon: Icon(icon, color: color),
       iconSize: iconSize,
       visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 30, minHeight: 40),
     );
   }
 }

@@ -79,6 +79,10 @@ class OnAudioQueryMediaStoreScanner implements MediaStoreScanner {
     // diberikan → crash. Jangan panggil `queryArtwork` sebelum izin ada.
     final granted = await _query.permissionsStatus();
     if (!granted) return null;
-    return await _query.queryArtwork(songId, ArtworkType.AUDIO, size: 200);
+    // HD: ukuran 600 dp memastikan sampul tajam di grid besar maupun
+    // layar pemutar (yang butuh ~300 dp). Plugin memakai
+    // `loadThumbnail(size, size)` — 200 (default) terlihat buram saat
+    // diperbesar.
+    return await _query.queryArtwork(songId, ArtworkType.AUDIO, size: 600);
   });
 }

@@ -11,7 +11,9 @@ part of 'search_history_controller.dart';
 /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
-/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom. Hasil
+/// pencarian terakhir disimpan terpisah di key [lastResultsKey] (sebagai
+/// map `{'query': String, 'tracks': List<Map>}`).
 ///
 /// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
 /// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
@@ -23,7 +25,9 @@ final searchHistoryControllerProvider = SearchHistoryControllerProvider._();
 /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
-/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom. Hasil
+/// pencarian terakhir disimpan terpisah di key [lastResultsKey] (sebagai
+/// map `{'query': String, 'tracks': List<Map>}`).
 ///
 /// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
 /// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
@@ -33,7 +37,9 @@ final class SearchHistoryControllerProvider
   /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
   ///
   /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
-  /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+  /// Karena hanya menyimpan String, tidak butuh adapter Hive kustom. Hasil
+  /// pencarian terakhir disimpan terpisah di key [lastResultsKey] (sebagai
+  /// map `{'query': String, 'tracks': List<Map>}`).
   ///
   /// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
   /// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa
@@ -66,12 +72,14 @@ final class SearchHistoryControllerProvider
 }
 
 String _$searchHistoryControllerHash() =>
-    r'c32636d3ebb3d0fc2698a0d2574c5074fafd93d1';
+    r'6a51f2d97a081e0cce89ec638a8ab5b3dd469da5';
 
 /// Riwayat pencarian pengguna (task 3.5) — disimpan di `searchHistoryBox`.
 ///
 /// Entri terbaru ada di depan, unik, dibatasi [kMaxSearchHistory] entri.
-/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom.
+/// Karena hanya menyimpan String, tidak butuh adapter Hive kustom. Hasil
+/// pencarian terakhir disimpan terpisah di key [lastResultsKey] (sebagai
+/// map `{'query': String, 'tracks': List<Map>}`).
 ///
 /// Bila box belum terbuka (mis. inisialisasi Hive gagal atau lingkungan
 /// test), controller bersifat *inert*: riwayat tetap tampil kosong tanpa

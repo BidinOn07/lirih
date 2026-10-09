@@ -86,6 +86,10 @@ class MusicLibraryRepositoryImpl implements MusicLibraryRepository {
           ? '<unknown>'
           : song.artist!.trim(),
       album: (song.album ?? '').trim().isEmpty ? null : song.album!.trim(),
+      trackNumber: song.track,
+      fileExtension: song.fileExtension.trim().isEmpty
+          ? null
+          : song.fileExtension.trim(),
       durationMs: song.duration,
       source: TrackSource.local(
         filePath: uri,
