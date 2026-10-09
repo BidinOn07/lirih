@@ -93,6 +93,14 @@ Risiko teknis tertinggi sudah dijalankan. Yang perlu diketahui sesi berikutnya:
 - **Pilihan desain:** `PlaybackParameters` (AudioTrack time-stretch, API 23+) diuji duluan karena paling murah. **Eskalasi bila ada artifact (validasi 0.9):** `PitchAudioProcessor` (Sonic) pada custom audio sink — lihat TDD §4.3.
 - **Status:** kompilasi & unit test hijau; **belum divalidasi di perangkat**. Validasi telinga pada 432/528 Hz (task 0.9) butuh device fisik + headphone.
 
+## Notifikasi media & foreground service (task 1.7)
+
+`LirihPlaybackService` (MediaSessionService media3) sudah diverifikasi di device Xiaomi MIUI/HyperOS. **Dua jebakan yang sudah ditambal — jangan dikembalikan:**
+
+- **`startForeground()` WAJIB dipanggil sinkron di `onCreate()`.** `DspPlugin.startPlaybackService()` memanggil `startForegroundService()` tepat saat ExoPlayer transisi ke *playing*, tapi media3 membangun notifikasi secara **asinkron** (koneksi `MediaController` + muat bitmap sampul). Sistem hanya beri ~5–10 d; bila `startForeground()` belum dipanggil → **`ForegroundServiceDidNotStartInTimeException` → app dibunuh** (crash nyata, terjadi 2× di device). Fix: notifikasi minimal diposting sinkron di `onCreate`, **dengan ID/channel yang sama** persis dengan `DefaultMediaNotificationProvider` yang dipasang via `setMediaNotificationProvider` (ID `1001`, channel `lirih_playback`) — saat media3 selesai, ia **menimpa** notifikasi itu (tak ada notifikasi ganda).
+- **`addSession()` WAJIB dipanggil eksplisit di `onCreate()`.** Intent start service dari Dart **tidak membawa media action**, sehingga `onStartCommand` bawaan media3 mengabaikannya dan session tak pernah terdaftar ke notification manager → notifikasi tak pernah muncul walau izin diberikan.
+- **Metadata trek** (judul/artis/sampul) HARUS dikirim ke native: `DspChannel.play(path, title:, artist:, artUri:)` → `MediaItem.MediaMetadata`. Tanpa ini notifikasi media3 tampil kosong; di MIUI notifikasi kosong bahkan disembunyikan. Sumber: `Track.title/artist/artUri`.
+
 ## Sampel musik uji (task 0.9)
 
 - **`assets/samples/`** berisi sampel audio **berhak cipta** untuk pengujian debug di perangkat sendiri. Isi folder **di-gitignore** (`!assets/samples/.gitkeep`) — **jangan pernah commit**, dan **jangan masukkan ke AAB rilis**.
