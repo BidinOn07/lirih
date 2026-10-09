@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:hive_ce/hive.dart';
 import 'package:lirih/core/audio/dsp_channel.dart';
+import 'package:lirih/core/services/hive_service.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
+import 'package:lirih/data/mappers/track_mapper.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/home/recent_plays_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
@@ -27,9 +30,21 @@ part 'player_controller.g.dart';
 class PlayerController extends _$PlayerController {
   final DspChannel _dsp = const DspChannel();
 
+  /// Key antrean di `queueBox` (task 1.10).
+  static const String _queueKey = 'queue';
+
+  /// Key indeks trek aktif di `queueBox`.
+  static const String _indexKey = 'queueIndex';
+
+  /// Key mode pengulangan di `queueBox`.
+  static const String _repeatKey = 'repeatMode';
+
   Timer? _positionTimer;
 
   StreamSubscription<DspEventPayload>? _eventSub;
+
+  /// Box Hive untuk persistensi antrean; `null` bila belum terbuka (inert).
+  Box<dynamic>? _box;
 
   /// Apakah izin notifikasi sudah pernah diminta (hindari nag).
   bool _notificationAsked = false;
@@ -38,13 +53,17 @@ class PlayerController extends _$PlayerController {
   PlayerState build() {
     // Frekuensi default dipulihkan dari pengaturan (task 5.x).
     final defaultHz = ref.read(settingsControllerProvider);
+    // Antrean, trek aktif, dan mode pengulangan dipulihkan dari Hive
+    // (task 1.10). Playback TIDAK dilanjutkan otomatis — pengguna menekan
+    // Play sendiri setelah aplikasi dibuka kembali.
+    final restored = _restoreQueue(defaultHz);
     _eventSub = _dsp.events.listen(_onNativeEvent);
     ref.onDispose(() {
       unawaited(_eventSub?.cancel());
       _positionTimer?.cancel();
       unawaited(_dsp.stop());
     });
-    return PlayerState(queue: const <Track>[], frequencyHz: defaultHz);
+    return restored;
   }
 
   /// Menangani event dari mesin native.
@@ -73,6 +92,7 @@ class PlayerController extends _$PlayerController {
       positionMs: 0,
       durationMs: 0,
     );
+    unawaited(_persist(state));
 
     await _dsp.play(track.sourcePath);
     await _dsp.setPitch(pitchRatioForFrequency(state.frequencyHz));
@@ -142,6 +162,7 @@ class PlayerController extends _$PlayerController {
     final current = kLoopCycle.indexOf(state.repeatMode);
     final next = kLoopCycle[(current + 1) % kLoopCycle.length];
     state = state.copyWith(repeatMode: next);
+    unawaited(_persist(state));
   }
 
   /// Mengatur frekuensi penalaan (diterapkan real-time ke mesin native).
@@ -190,6 +211,7 @@ class PlayerController extends _$PlayerController {
       queue: queue,
       currentIndex: current == null ? -1 : queue.indexOf(current),
     );
+    unawaited(_persist(state));
   }
 
   /// Menghapus trek pada [index] dari antrean (task 2.9).
@@ -210,6 +232,7 @@ class PlayerController extends _$PlayerController {
           currentIndex: -1,
           isPlaying: false,
         );
+        unawaited(_persist(state));
         return;
       }
       final replacement =
@@ -224,6 +247,63 @@ class PlayerController extends _$PlayerController {
       queue: queue,
       currentIndex: current == null ? -1 : queue.indexOf(current),
     );
+    unawaited(_persist(state));
+  }
+
+  // ── Persistensi antrean (task 1.10) ──────────────────────────────
+
+  /// Membaca antrean tersimpan dari `queueBox` menjadi [PlayerState]
+  /// awal dengan frekuensi [frequencyHz].
+  ///
+  /// Bersifat *inert* (mengembalikan antrean kosong) bila box belum
+  /// terbuka, isinya bukan list, atau kosong — sama seperti controller
+  /// recents/search history.
+  PlayerState _restoreQueue(double frequencyHz) {
+    if (!Hive.isBoxOpen(HiveBoxes.queue)) {
+      return PlayerState(queue: const <Track>[], frequencyHz: frequencyHz);
+    }
+    _box = Hive.box<dynamic>(HiveBoxes.queue);
+
+    final tracks = <Track>[];
+    final raw = _box?.get(_queueKey);
+    if (raw is List) {
+      for (final entry in raw) {
+        if (entry is! Map) continue;
+        final track = TrackMapper.fromJson(Map<String, dynamic>.from(entry));
+        if (track != null) tracks.add(track);
+      }
+    }
+    if (tracks.isEmpty) {
+      return PlayerState(queue: const <Track>[], frequencyHz: frequencyHz);
+    }
+
+    final storedIndex = (_box?.get(_indexKey) as int?) ?? -1;
+    final storedRepeat = _box?.get(_repeatKey) as String?;
+    return PlayerState(
+      queue: List<Track>.unmodifiable(tracks),
+      // Jaga indeks tetap valid walau antrean menyusut sebelum disimpan.
+      currentIndex: storedIndex.clamp(-1, tracks.length - 1),
+      repeatMode: LoopMode.values.firstWhere(
+        (mode) => mode.name == storedRepeat,
+        orElse: () => LoopMode.off,
+      ),
+      frequencyHz: frequencyHz,
+    );
+  }
+
+  /// Menyimpan antrean, trek aktif, dan mode pengulangan ke `queueBox`.
+  ///
+  /// Trek diserialkan via [TrackMapper] (Map murni) sehingga tetap bisa
+  /// diputar walau pemindaian MediaStore belum selesai saat aplikasi
+  /// dibuka kembali.
+  Future<void> _persist(PlayerState value) async {
+    final box = _box;
+    if (box == null) return;
+    await box.putAll(<String, dynamic>{
+      _queueKey: value.queue.map(TrackMapper.toJson).toList(growable: false),
+      _indexKey: value.currentIndex,
+      _repeatKey: value.repeatMode.name,
+    });
   }
 
   // ── Polling posisi ────────────────────────────────────────────────
