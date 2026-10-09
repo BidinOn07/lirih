@@ -83,8 +83,21 @@ class DspChannel {
   }
 
   /// Memutar berkas audio di absolute [path] atau `content://` URI.
-  Future<void> play(String path) =>
-      _channel.invokeMethod<void>('play', <String, dynamic>{'path': path});
+  ///
+  /// Metadata opsional ([title], [artist], [artUri]) diteruskan ke
+  /// `MediaMetadata` ExoPlayer agar **notifikasi media** menampilkan
+  /// judul, artis, dan sampul album (task 1.7).
+  Future<void> play(
+    String path, {
+    String? title,
+    String? artist,
+    String? artUri,
+  }) => _channel.invokeMethod<void>('play', <String, dynamic>{
+    'path': path,
+    'title': title,
+    'artist': artist,
+    'artUri': artUri,
+  });
 
   /// Membuka pemilih berkas sistem (SAF) untuk memilih musik.
   ///

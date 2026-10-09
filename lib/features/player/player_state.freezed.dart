@@ -22,7 +22,8 @@ mixin _$PlayerState {
  int get positionMs;/// Durasi trek aktif (milidetik).
  int get durationMs;/// Frekuensi penalaan aktif (default A4 internasional).
  double get frequencyHz;/// Mode pengulangan antrean (task 1.11).
- LoopMode get repeatMode;
+ LoopMode get repeatMode;/// Mode acak antrean: trek berikutnya dipilih sembarang (task 2.7).
+ bool get isShuffling;
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -34,20 +35,20 @@ $PlayerStateCopyWith<PlayerState> get copyWith => _$PlayerStateCopyWithImpl<Play
 @override
 bool operator ==(Object other) {
   final _this = this as PlayerState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlayerState&&const DeepCollectionEquality().equals(other.queue, _this.queue)&&(identical(other.currentIndex, _this.currentIndex) || other.currentIndex == _this.currentIndex)&&(identical(other.isPlaying, _this.isPlaying) || other.isPlaying == _this.isPlaying)&&(identical(other.positionMs, _this.positionMs) || other.positionMs == _this.positionMs)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.frequencyHz, _this.frequencyHz) || other.frequencyHz == _this.frequencyHz)&&(identical(other.repeatMode, _this.repeatMode) || other.repeatMode == _this.repeatMode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlayerState&&const DeepCollectionEquality().equals(other.queue, _this.queue)&&(identical(other.currentIndex, _this.currentIndex) || other.currentIndex == _this.currentIndex)&&(identical(other.isPlaying, _this.isPlaying) || other.isPlaying == _this.isPlaying)&&(identical(other.positionMs, _this.positionMs) || other.positionMs == _this.positionMs)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.frequencyHz, _this.frequencyHz) || other.frequencyHz == _this.frequencyHz)&&(identical(other.repeatMode, _this.repeatMode) || other.repeatMode == _this.repeatMode)&&(identical(other.isShuffling, _this.isShuffling) || other.isShuffling == _this.isShuffling));
 }
 
 
 @override
 int get hashCode {
   final _this = this as PlayerState;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.queue),_this.currentIndex,_this.isPlaying,_this.positionMs,_this.durationMs,_this.frequencyHz,_this.repeatMode);
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.queue),_this.currentIndex,_this.isPlaying,_this.positionMs,_this.durationMs,_this.frequencyHz,_this.repeatMode,_this.isShuffling);
 }
 
 @override
 String toString() {
   final _this = this as PlayerState;
-  return 'PlayerState(queue: ${_this.queue}, currentIndex: ${_this.currentIndex}, isPlaying: ${_this.isPlaying}, positionMs: ${_this.positionMs}, durationMs: ${_this.durationMs}, frequencyHz: ${_this.frequencyHz}, repeatMode: ${_this.repeatMode})';
+  return 'PlayerState(queue: ${_this.queue}, currentIndex: ${_this.currentIndex}, isPlaying: ${_this.isPlaying}, positionMs: ${_this.positionMs}, durationMs: ${_this.durationMs}, frequencyHz: ${_this.frequencyHz}, repeatMode: ${_this.repeatMode}, isShuffling: ${_this.isShuffling})';
 }
 
 
@@ -58,7 +59,7 @@ abstract mixin class $PlayerStateCopyWith<$Res>  {
   factory $PlayerStateCopyWith(PlayerState value, $Res Function(PlayerState) _then) = _$PlayerStateCopyWithImpl;
 @useResult
 $Res call({
- List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode
+ List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode, bool isShuffling
 });
 
 
@@ -75,7 +76,7 @@ class _$PlayerStateCopyWithImpl<$Res>
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,Object? isShuffling = null,}) {
   return _then(PlayerState(
 queue: null == queue ? _self.queue : queue // ignore: cast_nullable_to_non_nullable
 as List<Track>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
@@ -84,7 +85,8 @@ as bool,positionMs: null == positionMs ? _self.positionMs : positionMs // ignore
 as int,durationMs: null == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int,frequencyHz: null == frequencyHz ? _self.frequencyHz : frequencyHz // ignore: cast_nullable_to_non_nullable
 as double,repeatMode: null == repeatMode ? _self.repeatMode : repeatMode // ignore: cast_nullable_to_non_nullable
-as LoopMode,
+as LoopMode,isShuffling: null == isShuffling ? _self.isShuffling : isShuffling // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -169,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode,  bool isShuffling)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlayerState() when $default != null:
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode,_that.isShuffling);case _:
   return orElse();
 
 }
@@ -190,10 +192,10 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode,  bool isShuffling)  $default,) {final _that = this;
 switch (_that) {
 case _PlayerState():
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode,_that.isShuffling);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +212,10 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Track> queue,  int currentIndex,  bool isPlaying,  int positionMs,  int durationMs,  double frequencyHz,  LoopMode repeatMode,  bool isShuffling)?  $default,) {final _that = this;
 switch (_that) {
 case _PlayerState() when $default != null:
-return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode);case _:
+return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,_that.durationMs,_that.frequencyHz,_that.repeatMode,_that.isShuffling);case _:
   return null;
 
 }
@@ -225,7 +227,7 @@ return $default(_that.queue,_that.currentIndex,_that.isPlaying,_that.positionMs,
 
 
 class _PlayerState extends PlayerState {
-  const _PlayerState({required  List<Track> queue, this.currentIndex = -1, this.isPlaying = false, this.positionMs = 0, this.durationMs = 0, this.frequencyHz = kReferenceFrequencyHz, this.repeatMode = LoopMode.off}): _queue = queue,super._();
+  const _PlayerState({required  List<Track> queue, this.currentIndex = -1, this.isPlaying = false, this.positionMs = 0, this.durationMs = 0, this.frequencyHz = kReferenceFrequencyHz, this.repeatMode = LoopMode.off, this.isShuffling = false}): _queue = queue,super._();
   
 
 /// Antrean trek yang sedang dimainkan.
@@ -249,6 +251,8 @@ class _PlayerState extends PlayerState {
 @override@JsonKey() final  double frequencyHz;
 /// Mode pengulangan antrean (task 1.11).
 @override@JsonKey() final  LoopMode repeatMode;
+/// Mode acak antrean: trek berikutnya dipilih sembarang (task 2.7).
+@override@JsonKey() final  bool isShuffling;
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
@@ -260,18 +264,18 @@ _$PlayerStateCopyWith<_PlayerState> get copyWith => __$PlayerStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlayerState&&const DeepCollectionEquality().equals(other.queue, _queue)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.positionMs, positionMs) || other.positionMs == positionMs)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.frequencyHz, frequencyHz) || other.frequencyHz == frequencyHz)&&(identical(other.repeatMode, repeatMode) || other.repeatMode == repeatMode));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlayerState&&const DeepCollectionEquality().equals(other.queue, _queue)&&(identical(other.currentIndex, currentIndex) || other.currentIndex == currentIndex)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.positionMs, positionMs) || other.positionMs == positionMs)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.frequencyHz, frequencyHz) || other.frequencyHz == frequencyHz)&&(identical(other.repeatMode, repeatMode) || other.repeatMode == repeatMode)&&(identical(other.isShuffling, isShuffling) || other.isShuffling == isShuffling));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_queue),currentIndex,isPlaying,positionMs,durationMs,frequencyHz,repeatMode);
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_queue),currentIndex,isPlaying,positionMs,durationMs,frequencyHz,repeatMode,isShuffling);
 }
 
 @override
 String toString() {
-    return 'PlayerState(queue: $queue, currentIndex: $currentIndex, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, frequencyHz: $frequencyHz, repeatMode: $repeatMode)';
+    return 'PlayerState(queue: $queue, currentIndex: $currentIndex, isPlaying: $isPlaying, positionMs: $positionMs, durationMs: $durationMs, frequencyHz: $frequencyHz, repeatMode: $repeatMode, isShuffling: $isShuffling)';
 }
 
 
@@ -282,7 +286,7 @@ abstract mixin class _$PlayerStateCopyWith<$Res> implements $PlayerStateCopyWith
   factory _$PlayerStateCopyWith(_PlayerState value, $Res Function(_PlayerState) _then) = __$PlayerStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode
+ List<Track> queue, int currentIndex, bool isPlaying, int positionMs, int durationMs, double frequencyHz, LoopMode repeatMode, bool isShuffling
 });
 
 
@@ -299,7 +303,7 @@ class __$PlayerStateCopyWithImpl<$Res>
 
 /// Create a copy of PlayerState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? queue = null,Object? currentIndex = null,Object? isPlaying = null,Object? positionMs = null,Object? durationMs = null,Object? frequencyHz = null,Object? repeatMode = null,Object? isShuffling = null,}) {
   return _then(_PlayerState(
 queue: null == queue ? _self._queue : queue // ignore: cast_nullable_to_non_nullable
 as List<Track>,currentIndex: null == currentIndex ? _self.currentIndex : currentIndex // ignore: cast_nullable_to_non_nullable
@@ -308,7 +312,8 @@ as bool,positionMs: null == positionMs ? _self.positionMs : positionMs // ignore
 as int,durationMs: null == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int,frequencyHz: null == frequencyHz ? _self.frequencyHz : frequencyHz // ignore: cast_nullable_to_non_nullable
 as double,repeatMode: null == repeatMode ? _self.repeatMode : repeatMode // ignore: cast_nullable_to_non_nullable
-as LoopMode,
+as LoopMode,isShuffling: null == isShuffling ? _self.isShuffling : isShuffling // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

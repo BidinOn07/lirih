@@ -18,10 +18,13 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# The .vscode folder contains launch configuration and tasks you configure on
+# your local machine — Lirih sengaja tidak menyertakannya (config tooling
+# lokal, bukan bagian dari proyek).
+.vscode/
+
+# Konfigurasi DevTools Flutter — lokal per-mesin.
+devtools_options.yaml
 
 # Flutter/Dart/Pub related
 **/doc/api/

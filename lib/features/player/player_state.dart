@@ -35,6 +35,9 @@ abstract class PlayerState with _$PlayerState {
 
     /// Mode pengulangan antrean (task 1.11).
     @Default(LoopMode.off) LoopMode repeatMode,
+
+    /// Mode acak antrean: trek berikutnya dipilih sembarang (task 2.7).
+    @Default(false) bool isShuffling,
   }) = _PlayerState;
   const PlayerState._();
 

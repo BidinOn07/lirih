@@ -114,7 +114,12 @@ class DspPlugin(
         try {
             when (call.method) {
                 "play" -> {
-                    player.playFile(call.argument<String>("path")!!)
+                    player.playFile(
+                        call.argument<String>("path")!!,
+                        title = call.argument("title"),
+                        artist = call.argument("artist"),
+                        artUri = call.argument("artUri"),
+                    )
                     startPlaybackService()
                     result.success(null)
                 }

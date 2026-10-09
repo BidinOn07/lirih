@@ -8,8 +8,9 @@ part of 'lyrics_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Lirik trek yang sedang aktif (task 3.2) — diambil dari tag tertanam
-/// lewat `MediaMetadataRetriever` (best effort: `null` bila tak ada).
+/// Lirik trek yang sedang aktif (task 3.2) — diambil dari frame lirik
+/// tertanam (`USLT` di tag ID3v2) lewat parser native (best effort:
+/// `null` bila tak ada).
 ///
 /// Status berupa [AsyncValue] `String?`: `loading` saat mengambil,
 /// `data(null)` bila trek tak punya lirik. Hasil di-<b>cache</b> per id
@@ -19,8 +20,9 @@ part of 'lyrics_controller.dart';
 @ProviderFor(LyricsController)
 final lyricsControllerProvider = LyricsControllerProvider._();
 
-/// Lirik trek yang sedang aktif (task 3.2) — diambil dari tag tertanam
-/// lewat `MediaMetadataRetriever` (best effort: `null` bila tak ada).
+/// Lirik trek yang sedang aktif (task 3.2) — diambil dari frame lirik
+/// tertanam (`USLT` di tag ID3v2) lewat parser native (best effort:
+/// `null` bila tak ada).
 ///
 /// Status berupa [AsyncValue] `String?`: `loading` saat mengambil,
 /// `data(null)` bila trek tak punya lirik. Hasil di-<b>cache</b> per id
@@ -28,8 +30,9 @@ final lyricsControllerProvider = LyricsControllerProvider._();
 /// berubah (bukan tiap pembaruan posisi).
 final class LyricsControllerProvider
     extends $AsyncNotifierProvider<LyricsController, String?> {
-  /// Lirik trek yang sedang aktif (task 3.2) — diambil dari tag tertanam
-  /// lewat `MediaMetadataRetriever` (best effort: `null` bila tak ada).
+  /// Lirik trek yang sedang aktif (task 3.2) — diambil dari frame lirik
+  /// tertanam (`USLT` di tag ID3v2) lewat parser native (best effort:
+  /// `null` bila tak ada).
   ///
   /// Status berupa [AsyncValue] `String?`: `loading` saat mengambil,
   /// `data(null)` bila trek tak punya lirik. Hasil di-<b>cache</b> per id
@@ -56,8 +59,9 @@ final class LyricsControllerProvider
 
 String _$lyricsControllerHash() => r'17df391f16009ec587752895822e90af40d3c029';
 
-/// Lirik trek yang sedang aktif (task 3.2) — diambil dari tag tertanam
-/// lewat `MediaMetadataRetriever` (best effort: `null` bila tak ada).
+/// Lirik trek yang sedang aktif (task 3.2) — diambil dari frame lirik
+/// tertanam (`USLT` di tag ID3v2) lewat parser native (best effort:
+/// `null` bila tak ada).
 ///
 /// Status berupa [AsyncValue] `String?`: `loading` saat mengambil,
 /// `data(null)` bila trek tak punya lirik. Hasil di-<b>cache</b> per id

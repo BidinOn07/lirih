@@ -71,7 +71,7 @@ final class PlayerControllerProvider
   }
 }
 
-String _$playerControllerHash() => r'121ccafa812b7ef50b5b973d2ffe9c0dd4ecea90';
+String _$playerControllerHash() => r'148ea8fec6e6451e2148c64fa97ee46ab7a1be96';
 
 /// Kendali pemutar Lirih (task 2.7) — jembatan antara antrean trek dan
 /// mesin DSP native.

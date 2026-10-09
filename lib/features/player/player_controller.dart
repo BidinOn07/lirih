@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:hive_ce/hive.dart';
 import 'package:lirih/core/audio/dsp_channel.dart';
@@ -39,7 +40,13 @@ class PlayerController extends _$PlayerController {
   /// Key mode pengulangan di `queueBox`.
   static const String _repeatKey = 'repeatMode';
 
+  /// Key mode acak di `queueBox`.
+  static const String _shuffleKey = 'isShuffling';
+
   Timer? _positionTimer;
+
+  /// Generator angka acak untuk mode shuffle.
+  final Random _random = Random();
 
   StreamSubscription<DspEventPayload>? _eventSub;
 
@@ -94,7 +101,12 @@ class PlayerController extends _$PlayerController {
     );
     unawaited(_persist(state));
 
-    await _dsp.play(track.sourcePath);
+    await _dsp.play(
+      track.sourcePath,
+      title: track.title,
+      artist: track.artist,
+      artUri: track.artUri,
+    );
     await _dsp.setPitch(pitchRatioForFrequency(state.frequencyHz));
     unawaited(
       ref.read(recentPlaysControllerProvider.notifier).recordPlay(track),
@@ -137,6 +149,16 @@ class PlayerController extends _$PlayerController {
       return;
     }
 
+    // Acak: pilih trek sembarang yang berbeda dari trek aktif.
+    if (state.isShuffling && queue.length > 1) {
+      var random = current;
+      while (random == current) {
+        random = _random.nextInt(queue.length);
+      }
+      await playTrack(queue[random], queue: queue);
+      return;
+    }
+
     var next = current + delta;
     if (auto && next > lastIndex) {
       // Akhir antrean tercapai otomatis: berhenti bila repeat off.
@@ -149,6 +171,17 @@ class PlayerController extends _$PlayerController {
     next %= queue.length; // membungkus kedua arah (Dart: % Euclidean)
 
     await playTrack(queue[next], queue: queue);
+  }
+
+  /// Menyalakan/mematikan mode acak (task 2.7).
+  ///
+  /// Saat aktif, trek berikutnya (baik skip eksplisit maupun setelah trek
+  /// selesai) dipilih **sembarang**, berbeda dari trek yang sedang diputar.
+  /// Tidak mengubah antrean asli — urutan di sheet antrean tetap, hanya
+  /// urutan pemutaran yang diacak.
+  void toggleShuffle() {
+    state = state.copyWith(isShuffling: !state.isShuffling);
+    unawaited(_persist(state));
   }
 
   /// Melompat ke [position].
@@ -279,6 +312,7 @@ class PlayerController extends _$PlayerController {
 
     final storedIndex = (_box?.get(_indexKey) as int?) ?? -1;
     final storedRepeat = _box?.get(_repeatKey) as String?;
+    final storedShuffle = (_box?.get(_shuffleKey) as bool?) ?? false;
     return PlayerState(
       queue: List<Track>.unmodifiable(tracks),
       // Jaga indeks tetap valid walau antrean menyusut sebelum disimpan.
@@ -287,6 +321,7 @@ class PlayerController extends _$PlayerController {
         (mode) => mode.name == storedRepeat,
         orElse: () => LoopMode.off,
       ),
+      isShuffling: storedShuffle,
       frequencyHz: frequencyHz,
     );
   }
@@ -303,6 +338,7 @@ class PlayerController extends _$PlayerController {
       _queueKey: value.queue.map(TrackMapper.toJson).toList(growable: false),
       _indexKey: value.currentIndex,
       _repeatKey: value.repeatMode.name,
+      _shuffleKey: value.isShuffling,
     });
   }
 

@@ -277,6 +277,8 @@ class _Controls extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        const _ShuffleButton(),
+        const SizedBox(width: 8),
         IconButton(
           onPressed: notifier.skipPrevious,
           icon: const Icon(Icons.skip_previous),
@@ -306,6 +308,27 @@ class _Controls extends ConsumerWidget {
         const SizedBox(width: 8),
         const _RepeatButton(),
       ],
+    );
+  }
+}
+
+/// Tombol mode acak: trek berikutnya dipilih sembarang (task 2.7).
+class _ShuffleButton extends ConsumerWidget {
+  const _ShuffleButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isShuffling = ref.watch(
+      playerControllerProvider.select((state) => state.isShuffling),
+    );
+    final notifier = ref.read(playerControllerProvider.notifier);
+
+    return IconButton(
+      onPressed: notifier.toggleShuffle,
+      icon: const Icon(Icons.shuffle),
+      color: isShuffling ? AppColors.kunir500 : AppColors.soga300,
+      iconSize: 26,
+      tooltip: isShuffling ? 'Acak: aktif' : 'Acak: mati',
     );
   }
 }

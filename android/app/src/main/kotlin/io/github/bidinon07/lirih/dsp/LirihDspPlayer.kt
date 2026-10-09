@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
@@ -70,18 +71,41 @@ class LirihDspPlayer(private val context: Context) {
      */
     internal fun sessionPlayer(): ExoPlayer = ensurePlayer()
 
-    /** Memutar berkas audio di [path] (absolute filesystem path). */
-    fun playFile(path: String) {
+    /**
+     * Memutar berkas audio di [path] (absolute filesystem path).
+     *
+     * Metadata opsional ([title], [artist], [artUri]) dipasang ke
+     * [MediaItem] sehingga notifikasi media & lockscreen (task 1.7)
+     * menampilkan judul, artis, dan sampul album. Tanpa metadata,
+     * notifikasi media3 tampil kosong — pada beberapa perangkat (mis.
+     * MIUI/HyperOS) notifikasi kosong bahkan disembunyikan.
+     */
+    fun playFile(
+        path: String,
+        title: String? = null,
+        artist: String? = null,
+        artUri: String? = null,
+    ) {
         val uri = if (path.startsWith("content:") || path.startsWith("file:")) {
             android.net.Uri.parse(path)
         } else {
             android.net.Uri.fromFile(File(path))
         }
         Log.i(TAG, "playFile: $uri")
+        val metadata = MediaMetadata.Builder()
+            .setTitle(title ?: "Lirih")
+            .setArtist(artist)
+            .setArtworkUri(artUri?.let(android.net.Uri::parse))
+            .build()
         with(ensurePlayer()) {
             stop()
             clearMediaItems()
-            setMediaItem(MediaItem.fromUri(uri))
+            setMediaItem(
+                MediaItem.Builder()
+                    .setUri(uri)
+                    .setMediaMetadata(metadata)
+                    .build(),
+            )
             prepare()
             play()
         }

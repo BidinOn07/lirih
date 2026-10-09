@@ -52,7 +52,7 @@ class _QueueSheet extends ConsumerWidget {
 }
 
 /// Isi sheet: header + daftar antrean yang dapat diurutkan ulang.
-class _QueueBody extends StatelessWidget {
+class _QueueBody extends StatefulWidget {
   const _QueueBody({
     required this.scrollController,
     required this.queue,
@@ -69,7 +69,52 @@ class _QueueBody extends StatelessWidget {
   final int currentIndex;
 
   @override
+  State<_QueueBody> createState() => _QueueBodyState();
+}
+
+class _QueueBodyState extends State<_QueueBody> {
+  /// Key baris pertama untuk mengukur tinggi baris (semua baris seragam).
+  final GlobalKey _firstRowKey = GlobalKey();
+
+  /// Agar hanya gulir sekali saat sheet dibuka.
+  bool _hasScrolled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Gulir ke trek aktif begitu layout pertama selesai, agar pengguna
+    // tidak perlu scroll dari awal untuk menemukan lagu yang diputar.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCurrent());
+  }
+
+  void _scrollToCurrent() {
+    if (!mounted || _hasScrolled) return;
+    if (!widget.scrollController.hasClients) return;
+    if (widget.currentIndex <= 0) {
+      _hasScrolled = true;
+      return;
+    }
+
+    // Tinggi tiap baris seragam; ukur dari baris pertama yang pasti ter-render.
+    double rowHeight = 68; // fallback sebelum terukur.
+    final box = _firstRowKey.currentContext?.findRenderObject();
+    if (box is RenderBox && box.hasSize) {
+      rowHeight = box.size.height;
+    }
+
+    final position = widget.scrollController.position;
+    // Posisikan trek aktif sedikit di bawah puncak sheet agar beberapa trek
+    // sebelumnya juga terlihat (konteks posisi dalam antrean).
+    final target = widget.currentIndex * rowHeight - rowHeight * 0.5;
+    widget.scrollController.jumpTo(target.clamp(0.0, position.maxScrollExtent));
+    _hasScrolled = true;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final queue = widget.queue;
+    final notifier = widget.notifier;
+
     return Column(
       children: [
         _SheetHandle(),
@@ -104,7 +149,7 @@ class _QueueBody extends StatelessWidget {
                   ),
                 )
               : ReorderableListView.builder(
-                  scrollController: scrollController,
+                  scrollController: widget.scrollController,
                   itemCount: queue.length,
                   onReorderItem: notifier.reorderQueue,
                   proxyDecorator: (child, _, _) => Material(
@@ -116,9 +161,14 @@ class _QueueBody extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final track = queue[index];
                     return _QueueRow(
-                      key: ValueKey<String>(track.id),
+                      // Baris pertama memakai GlobalKey agar tinggi baris
+                      // bisa diukur untuk auto-scroll; baris lain pakai
+                      // ValueKey (id trek) untuk drag reorder.
+                      key: index == 0
+                          ? _firstRowKey
+                          : ValueKey<String>(track.id),
                       track: track,
-                      isCurrent: index == currentIndex,
+                      isCurrent: index == widget.currentIndex,
                       onTap: () {
                         Navigator.of(context).pop();
                         unawaited(notifier.jumpTo(index));
