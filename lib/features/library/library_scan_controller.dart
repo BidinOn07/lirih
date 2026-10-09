@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:lirih/core/di/injection.dart';
 import 'package:lirih/core/extensions/either_x.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/playlists/playlists_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'library_scan_controller.g.dart';
@@ -18,7 +21,7 @@ class LibraryScanController extends _$LibraryScanController {
   FutureOr<List<Track>> build() async {
     final repo = ref.watch(musicLibraryRepositoryProvider);
     final result = await repo.scanLibrary();
-    return result.getOrThrow();
+    return _importDevicePlaylists(result.getOrThrow());
   }
 
   /// Memindai ulang pustaka dari awal (mis. setelah memberikan izin).
@@ -28,7 +31,20 @@ class LibraryScanController extends _$LibraryScanController {
     final result = await repo.scanLibrary();
     state = result.fold(
       (failure) => AsyncError(failure, StackTrace.current),
-      AsyncData<List<Track>>.new,
+      (tracks) => AsyncData<List<Track>>(_importDevicePlaylists(tracks)),
     );
+  }
+
+  /// Setelah pemindaian sukses, mengimpor otomatis playlist MediaStore
+  /// (task 3.1) — "auto import playlist yang sudah ada". Nama yang sudah
+  /// dipakai dilewati sehingga operasi ini idempoten. Dijalankan di latar
+  /// belakang: pemindaian tidak boleh menunggu kueri playlist.
+  List<Track> _importDevicePlaylists(List<Track> tracks) {
+    unawaited(
+      ref
+          .read(playlistsControllerProvider.notifier)
+          .importDevicePlaylists(tracks),
+    );
+    return tracks;
   }
 }

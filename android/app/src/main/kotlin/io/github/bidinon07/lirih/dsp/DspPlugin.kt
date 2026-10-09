@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -19,6 +21,9 @@ private const val TAG = "LirihDsp"
 
 /// Request code pemilihan berkas (di luar rentang yang dipakai engine).
 private const val RC_PICK_AUDIO = 42420
+
+/// Request code pemilihan berkas playlist (.m3u) via SAF (task 3.1).
+private const val RC_PICK_PLAYLIST_FILE = 42421
 
 /// Batas atas tag ID3 yang dibaca ke memori (frame USLT biasanya di awal;
 /// frame APIC/cover bisa besar sehingga 2 MB cukup aman).
@@ -46,6 +51,9 @@ class DspPlugin(
 
     /** Apakah foreground service pemutar sudah berjalan. */
     private var serviceRunning = false
+
+    /** Result method channel yang menunggu pemilihan berkas playlist. */
+    private var playlistFileResult: MethodChannel.Result? = null
 
     /** Mendaftarkan channel pada [messenger] dan mulai mendengar event. */
     fun attach(messenger: BinaryMessenger) {
@@ -97,6 +105,23 @@ class DspPlugin(
      * @return `true` bila request ini ditangani (pemilihan berkas).
      */
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        if (requestCode == RC_PICK_PLAYLIST_FILE) {
+            // Pemilihan berkas playlist (.m3u) — hasil dikembalikan sebagai
+            // teks ke Dart (task 3.1), tanpa memutar apapun.
+            val pending = playlistFileResult
+            playlistFileResult = null
+            if (pending == null) return true
+            val uri: Uri? = if (resultCode == Activity.RESULT_OK) data?.data else null
+            if (uri == null) {
+                activity.runOnUiThread { pending.success(null) }
+                return true
+            }
+            Thread {
+                val playlist = readPlaylistFile(uri)
+                activity.runOnUiThread { pending.success(playlist) }
+            }.start()
+            return true
+        }
         if (requestCode != RC_PICK_AUDIO) return false
         val uri: Uri? = if (resultCode == Activity.RESULT_OK) data?.data else null
         if (uri != null) {
@@ -173,6 +198,26 @@ class DspPlugin(
                         activity.runOnUiThread { result.success(lyrics) }
                     }.start()
                 }
+                "queryDevicePlaylists" -> {
+                    // Membaca playlist MediaStore (task 3.1) — I/O, jadi
+                    // di thread latar. Mengembalikan daftar
+                    // {id, name, audioIds:[...]}.
+                    Thread {
+                        val playlists = queryDevicePlaylists()
+                        activity.runOnUiThread { result.success(playlists) }
+                    }.start()
+                }
+                "pickPlaylistFile" -> {
+                    // Pemilih berkas .m3u via SAF (task 3.1). Hasil teks
+                    // berkas dikembalikan melalui playlistFileResult di
+                    // onActivityResult.
+                    playlistFileResult = result
+                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                    }
+                    activity.startActivityForResult(intent, RC_PICK_PLAYLIST_FILE)
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {
@@ -207,6 +252,112 @@ class DspPlugin(
             Log.e(TAG, "Gagal membaca lirik: $path", e)
             null
         }
+    }
+
+    /**
+     * Membaca daftar playlist dari MediaStore beserta anggotanya (task 3.1).
+     *
+     * Mengembalikan list map: `{id: Long, name: String, audioIds: List<Long>}`
+     * — `audioIds` berisi id MediaStore audio anggota, terurut sesuai urutan
+     * putar. **Best effort**: bila izin media belum diberikan atau tabel
+     * kosong, mengembalikan list kosong (tidak melemparkan galat).
+     */
+    private fun queryDevicePlaylists(): List<Map<String, Any>> {
+        val resolver = activity.contentResolver
+        val out = mutableListOf<Map<String, Any>>()
+        try {
+            val cols = arrayOf(
+                MediaStore.Audio.Playlists._ID,
+                MediaStore.Audio.Playlists.NAME,
+            )
+            resolver.query(
+                MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI,
+                cols,
+                null,
+                null,
+                "${MediaStore.Audio.Playlists.NAME} ASC",
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Playlists._ID)
+                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Playlists.NAME)
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idCol)
+                    val name = cursor.getString(nameCol) ?: continue
+                    val audioIds = readPlaylistMembers(id)
+                    if (audioIds.isNotEmpty()) {
+                        out.add(
+                            mapOf(
+                                "id" to id,
+                                "name" to name,
+                                "audioIds" to audioIds,
+                            ),
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membaca playlist MediaStore", e)
+        }
+        return out
+    }
+
+    /// Membaca id MediaStore audio anggota playlist [playlistId],
+    /// terurut sesuai urutan putar.
+    private fun readPlaylistMembers(playlistId: Long): List<Long> {
+        val resolver = activity.contentResolver
+        val ids = mutableListOf<Long>()
+        try {
+            val uri = MediaStore.Audio.Playlists.Members.getContentUri(
+                "external", playlistId,
+            )
+            val cols = arrayOf(MediaStore.Audio.Playlists.Members.AUDIO_ID)
+            resolver.query(
+                uri,
+                cols,
+                null,
+                null,
+                "${MediaStore.Audio.Playlists.Members.PLAY_ORDER} ASC",
+            )?.use { cursor ->
+                val col = cursor.getColumnIndexOrThrow(
+                    MediaStore.Audio.Playlists.Members.AUDIO_ID,
+                )
+                while (cursor.moveToNext()) ids.add(cursor.getLong(col))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membaca anggota playlist $playlistId", e)
+        }
+        return ids
+    }
+
+    /// Membaca berkas playlist [uri]: mengembalikan `{name, content}`
+    /// (nama tampilan + teks UTF-8); `null` bila gagal.
+    private fun readPlaylistFile(uri: Uri): Map<String, Any?>? {
+        return try {
+            val content = activity.contentResolver.openInputStream(uri)?.use { stream ->
+                stream.readBytes().toString(Charsets.UTF_8)
+            } ?: return null
+            mapOf("name" to displayNameOf(uri), "content" to content)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membaca berkas: $uri", e)
+            null
+        }
+    }
+
+    /// Nama tampilan berkas [uri] (OpenableColumns); fallback ke segmen
+    /// terakhir URI.
+    private fun displayNameOf(uri: Uri): String? {
+        return try {
+            activity.contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        } catch (e: Exception) {
+            null
+        } ?: uri.lastPathSegment
     }
 
     private fun parseId3Lyrics(stream: java.io.InputStream): String? {

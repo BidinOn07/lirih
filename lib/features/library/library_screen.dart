@@ -165,7 +165,10 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
           ),
         ];
       case 3:
-        return [const _PlaylistsGrid()];
+        return [
+          const SliverToBoxAdapter(child: _PlaylistImportBar()),
+          const _PlaylistsGrid(),
+        ];
       default:
         final sorted = _sortedTracks();
         return [
@@ -225,6 +228,79 @@ class _SectionTabs extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Tombol impor playlist di atas grid playlist (task 3.1): impor otomatis
+/// playlist MediaStore perangkat, dan impor berkas `.m3u`/`.m3u8`.
+class _PlaylistImportBar extends ConsumerWidget {
+  const _PlaylistImportBar();
+
+  /// Daftar trek pustaka (untuk pencocokan anggota playlist).
+  List<Track> _library(WidgetRef ref) => ref
+      .watch(libraryScanControllerProvider)
+      .maybeWhen(data: (tracks) => tracks, orElse: () => const <Track>[]);
+
+  /// Menampilkan pesan hasil impor.
+  void _notify(BuildContext context, String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.soga800,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () async {
+              final count = await ref
+                  .read(playlistsControllerProvider.notifier)
+                  .importDevicePlaylists(_library(ref));
+              if (!context.mounted) return;
+              _notify(
+                context,
+                count > 0
+                    ? '$count playlist perangkat diimpor.'
+                    : 'Tidak ada playlist baru di perangkat.',
+              );
+            },
+            icon: const Icon(Icons.download_rounded, size: 18),
+            label: const Text('Impor dari perangkat'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final count = await ref
+                  .read(playlistsControllerProvider.notifier)
+                  .importPlaylistFile(_library(ref));
+              if (!context.mounted) return;
+              if (count < 0) {
+                _notify(context, 'Impor dibatalkan.');
+                return;
+              }
+              _notify(
+                context,
+                count > 0
+                    ? '$count trek berhasil diimpor ke playlist baru.'
+                    : 'Tidak ada lagu di pustaka yang cocok dengan berkas '
+                          'tersebut.',
+              );
+            },
+            icon: const Icon(Icons.file_upload_outlined, size: 18),
+            label: const Text('Impor file (.m3u)'),
+          ),
         ],
       ),
     );

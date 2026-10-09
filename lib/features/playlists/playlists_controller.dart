@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:hive_ce/hive.dart';
+import 'package:lirih/core/audio/dsp_channel.dart';
 import 'package:lirih/core/services/hive_service.dart';
+import 'package:lirih/core/utils/m3u_parser.dart';
 import 'package:lirih/data/mappers/track_mapper.dart';
 import 'package:lirih/domain/entities/playlist.dart';
 import 'package:lirih/domain/entities/track.dart';
@@ -141,5 +143,89 @@ class PlaylistsController extends _$PlaylistsController {
     tracks.insert(newIndex, moved);
     await _persist(playlist.copyWith(tracks: tracks));
     state = _readAll();
+  }
+
+  /// Mengimpor playlist dari MediaStore perangkat (task 3.1) — fitur
+  /// *auto-import* "playlist yang sudah ada/sudah dibuat".
+  ///
+  /// Tiap playlist MediaStore yang anggotanya ada di [library] dibuatkan
+  /// playlist Lirih; nama yang sudah dipakai **dilewati** agar operasi ini
+  /// idempoten (aman dijalankan ulang tiap pemindaian). Mengembalikan
+  /// jumlah playlist baru yang dibuat.
+  Future<int> importDevicePlaylists(List<Track> library) async {
+    final box = _box;
+    if (box == null) return 0;
+
+    final byMediaStoreId = <int, Track>{
+      for (final track in library)
+        if (track.mediaStoreId != null) track.mediaStoreId!: track,
+    };
+
+    final devicePlaylists = await const DspChannel().queryDevicePlaylists();
+    var created = 0;
+    for (final device in devicePlaylists) {
+      if (state.any((playlist) => playlist.name == device.name)) continue;
+
+      final tracks = <Track>[];
+      for (final audioId in device.audioIds) {
+        final track = byMediaStoreId[audioId];
+        if (track != null && !tracks.any((t) => t.id == track.id)) {
+          tracks.add(track);
+        }
+      }
+      if (tracks.isEmpty) continue;
+
+      await _persist(
+        Playlist(
+          id: 'pl_${DateTime.now().microsecondsSinceEpoch}_$created',
+          name: device.name,
+          tracks: tracks,
+        ),
+      );
+      created++;
+    }
+    if (created > 0) state = _readAll();
+    return created;
+  }
+
+  /// Mengimpor satu berkas playlist (`.m3u`/`.m3u8`) yang dipilih pengguna
+  /// melalui pemilih berkas sistem (task 3.1).
+  ///
+  /// Entri dicocokkan ke trek [library] berdasarkan nama berkas
+  /// (*basename*, *case-insensitive*). Mengembalikan jumlah trek yang
+  /// berhasil dicocokkan, `0` bila tidak ada yang cocok, atau `-1` bila
+  /// pengguna membatalkan pemilihan berkas.
+  Future<int> importPlaylistFile(List<Track> library) async {
+    if (_box == null) return 0;
+
+    final picked = await const DspChannel().pickPlaylistFile();
+    if (picked == null) return -1;
+
+    final entries = M3uParser.entries(picked.content);
+    if (entries.isEmpty) return 0;
+
+    final byBasename = <String, Track>{
+      for (final track in library)
+        M3uParser.basenameOf(track.sourcePath): track,
+    };
+
+    final tracks = <Track>[];
+    for (final entry in entries) {
+      final track = byBasename[M3uParser.basenameOf(entry)];
+      if (track != null && !tracks.any((t) => t.id == track.id)) {
+        tracks.add(track);
+      }
+    }
+    if (tracks.isEmpty) return 0;
+
+    await _persist(
+      Playlist(
+        id: 'pl_${DateTime.now().microsecondsSinceEpoch}',
+        name: M3uParser.playlistNameFromFileName(picked.name),
+        tracks: tracks,
+      ),
+    );
+    state = _readAll();
+    return tracks.length;
   }
 }

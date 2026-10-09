@@ -170,4 +170,57 @@ class DspChannel {
     );
     return result;
   }
+
+  /// Playlist perangkat hasil kueri MediaStore (task 3.1): nama + id audio
+  /// MediaStore tiap anggota, terurut sesuai urutan putar.
+  ///
+  /// *Best effort*: mengembalikan list kosong bila tidak ada playlist, izin
+  /// media belum diberikan, atau channel tidak tersedia (mis. di test).
+  Future<List<DevicePlaylist>> queryDevicePlaylists() async {
+    final List<dynamic>? result;
+    try {
+      result = await _channel.invokeMethod<List<dynamic>>(
+        'queryDevicePlaylists',
+      );
+    } on Object {
+      return const <DevicePlaylist>[];
+    }
+    if (result == null) return const <DevicePlaylist>[];
+    return result
+        .whereType<Map<dynamic, dynamic>>()
+        .map((map) {
+          final rawIds = map['audioIds'] as List<dynamic>? ?? const <dynamic>[];
+          return (
+            id: (map['id'] as num).toInt(),
+            name: (map['name'] as String?) ?? '',
+            audioIds: rawIds.whereType<num>().map((id) => id.toInt()).toList(),
+          );
+        })
+        .where((playlist) => playlist.name.isNotEmpty)
+        .toList();
+  }
+
+  /// Membuka pemilih berkas untuk berkas playlist (`.m3u`/`.m3u8`) via
+  /// SAF — tanpa permission (task 3.1).
+  ///
+  /// Mengembalikan nama tampilan + isi teks berkas, atau `null` bila
+  /// pengguna membatalkan.
+  Future<PlaylistFile?> pickPlaylistFile() async {
+    final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
+      'pickPlaylistFile',
+    );
+    if (result == null) return null;
+    final content = result['content'] as String?;
+    if (content == null) return null;
+    return (
+      name: (result['name'] as String?) ?? 'Playlist diimpor',
+      content: content,
+    );
+  }
 }
+
+/// Playlist perangkat (MediaStore) hasil [DspChannel.queryDevicePlaylists].
+typedef DevicePlaylist = ({int id, String name, List<int> audioIds});
+
+/// Berkas playlist yang dipilih via [DspChannel.pickPlaylistFile].
+typedef PlaylistFile = ({String name, String content});
