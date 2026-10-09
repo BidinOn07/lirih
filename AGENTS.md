@@ -114,7 +114,30 @@ Risiko teknis tertinggi sudah dijalankan. Yang perlu diketahui sesi berikutnya:
 - **Riverpod 4.x:** provider fungsi memakai `Ref ref` generik (BUKAN `{Nama}Ref`); AsyncNotifier via `@riverpod class`. DI di `lib/core/di/injection.dart`.
 - **Repository:** `MusicLibraryRepositoryImpl` memetakan `SongModel` → `Track`, menyaring ekstensi (`.mp3/.flac/.wav/.m4a/.aac/.oga/.opus`), menormalkan artis/album kosong. Galat via dartz `Either<Failure, T>`; `Failure implements Exception` agar bisa `throw` di AsyncNotifier (`lib/core/extensions/either_x.dart` → `getOrThrow`).
 - **ID stabil:** `stableTrackId()` deterministik dari konten (path+judul+artis+durasi) — **penyimpangan disengaja dari TDD §3.2** (UUID acak justru berubah tiap scan, memutus referensi Hive).
-- **Ekstensi `fileExtension`:** berasal dari key map `file_extension` di `SongModel`, bukan nama file.
+- **Ekstensi `fileExtension`:** berasal dari key map `file_extension` di `SongModel`, bukan nama file. Dipakai menampilkan codec (track_info_sheet, `Track.formatLabel`).
+- **`trackNumber`** berasal dari key `track` di `SongModel` (tag TRK). `AlbumDetailScreen.sortByTrackNumber` mengurutkan album per nomor trek (null di belakang, fallback judul) — **bukan** per judul.
+
+## Sampul album & artwork
+
+- **Artwork HD:** `OnAudioQueryMediaStoreScanner.artworkFor` memanggil `queryArtwork(size: 600)` — native memakai `loadThumbnail(size, size)`. Default plugin 200 terlihat buram saat diperbesar (grid Pustaka ~180 dp, layar pemutar ~300 dp). 600 adalah kompromi ketajaman vs memori (cache `ArtworkCache` menyimpan byte per mediaStoreId seumur hidup app).
+- **`TrackArtwork`** butuh ukuran eksplisit (default 48). Di grid (`GroupCard`) dipakai `LayoutBuilder` + `AspectRatio(1)` agar kotak mengikuti lebar kartu.
+
+## Playlist (task 3.1) — CRUD + impor
+
+- **CRUD** di `PlaylistsController` (box `playlistsBox`, key = `Playlist.id`, value map `{name, tracks[], lastPlayedAt}`); trek disimpan *inline* via `TrackMapper` agar playlist tetap bisa diputar sebelum scan selesai.
+- **`lastPlayedAt`** (ms epoch) diperbarui `markPlayed()` saat playlist diputar → Beranda mengurutkan playlist dengan yang terakhir diputar di depan ("favorit").
+- **Auto-import (playlist perangkat):** `DspPlugin.queryDevicePlaylists` (Kotlin) baca `MediaStore.Audio.Playlists` + `Members` (PLAY_ORDER) di thread latar → `DspChannel.queryDevicePlaylists()` → `PlaylistsController.importDevicePlaylists()` mencocokkan `audioIds` ke `Track.mediaStoreId`. **Dedup per nama** (playlist dengan nama yang sama dilewati) agar idempoten. Dijalankan otomatis setelah pemindaian pustaka sukses (`LibraryScanController._importDevicePlaylists`, fire-and-forget). Di MIUI tabel ini biasanya **kosong** — jangan kaget bila tak ada yang terimpor.
+- **Impor berkas .m3u/.m3u8:** `DspPlugin.pickPlaylistFile` (SAF, `type = "*/*"`, request code `RC_PICK_PLAYLIST_FILE = 42421`) mengembalikan `{name, content}` via `playlistFileResult` (pending MethodChannel.Result diselesaikan di `onActivityResult`). Dart: `M3uParser.entries()` + pencocokan **basename** (case-insensitive, URL-decoded) terhadap `Track.sourcePath`. `on_audio_query` 2.9.0 **tidak** menyediakan query anggota playlist — itu alasan kueri native.
+- **UI:** tombol "Impor dari perangkat" & "Impor file (.m3u)" di bagian Playlist Pustaka; balasan via SnackBar.
+
+## Pencarian (task 3.5)
+
+- **Riwayat** (`searchHistoryBox`): daftar String (auto-increment key). **Hasil terakhir** disimpan di key `"__last_search__"` (map `{query, tracks[]}`) — `SearchHistoryController.add()` **hanya menghapus value bertipe String** (bukan `box.clear()`), agar key hasil terakhir tidak ikut terhapus. `LastSearch` ditampilkan saat kolom kosong dan bisa langsung diputar.
+- Kolom pencarian ada di **body** (padding), bukan di AppBar — ruang lega di puncak.
+
+## Mini player
+
+- Tinggi ~68 dp (artwork 52, padding vertikal 8). **Enam** tombol: acak, sebelumnya, putar/jeda, berikutnya, ulang, opsi (⋯). Tombol opsi membuka `showTrackInfoSheet`: judul, artis, album, trek ke-, format, durasi. Tombol dipadatkan (`minWidth: 30`) agar judul tak terlalu terjepit di layar 360 dp.
 
 ## Keputusan penundaan
 
