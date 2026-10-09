@@ -51,7 +51,14 @@ class PlaylistsController extends _$PlaylistsController {
         }
       }
 
-      playlists.add(Playlist(id: key, name: name, tracks: tracks));
+      playlists.add(
+        Playlist(
+          id: key,
+          name: name,
+          tracks: tracks,
+          lastPlayedAt: json['lastPlayedAt'] as int?,
+        ),
+      );
     }
     return List<Playlist>.unmodifiable(playlists);
   }
@@ -60,7 +67,19 @@ class PlaylistsController extends _$PlaylistsController {
     await _box?.put(playlist.id, <String, dynamic>{
       'name': playlist.name,
       'tracks': playlist.tracks.map(TrackMapper.toJson).toList(),
+      'lastPlayedAt': playlist.lastPlayedAt,
     });
+  }
+
+  /// Mencatat bahwa playlist ber-ID [id] baru saja diputar — memperbarui
+  /// `lastPlayedAt` sehingga playlist naik ke depan di Beranda (task 3.1).
+  Future<void> markPlayed(String id) async {
+    final playlist = state.where((p) => p.id == id).firstOrNull;
+    if (playlist == null) return;
+    await _persist(
+      playlist.copyWith(lastPlayedAt: DateTime.now().millisecondsSinceEpoch),
+    );
+    state = _readAll();
   }
 
   /// Membuat playlist baru bernama [name]; mengembalikan playlist tersebut.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,6 +38,17 @@ class PlaylistDetailScreen extends ConsumerWidget {
 
     final tracks = playlist.tracks;
 
+    Future<void> playFromPlaylist(Track first) async {
+      await ref
+          .read(playlistsControllerProvider.notifier)
+          .markPlayed(playlistId);
+      unawaited(
+        ref
+            .read(playerControllerProvider.notifier)
+            .playTrack(first, queue: tracks),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.soga900,
       appBar: AppBar(
@@ -72,9 +85,7 @@ class PlaylistDetailScreen extends ConsumerWidget {
                   child: SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: () => ref
-                          .read(playerControllerProvider.notifier)
-                          .playTrack(tracks.first, queue: tracks),
+                      onPressed: () => playFromPlaylist(tracks.first),
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Putar semua'),
                       style: FilledButton.styleFrom(
@@ -103,9 +114,7 @@ class PlaylistDetailScreen extends ConsumerWidget {
                       return _PlaylistTrackRow(
                         key: ValueKey<String>(track.id),
                         track: track,
-                        onTap: () => ref
-                            .read(playerControllerProvider.notifier)
-                            .playTrack(track, queue: tracks),
+                        onTap: () => playFromPlaylist(track),
                         onRemove: () => ref
                             .read(playlistsControllerProvider.notifier)
                             .removeTrack(playlistId, index),

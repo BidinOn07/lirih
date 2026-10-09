@@ -22,6 +22,11 @@ abstract class Playlist with _$Playlist {
 
     /// Trek anggota, terurut; urutan ini dipertahankan saat diputar.
     @Default(<Track>[]) List<Track> tracks,
+
+    /// Milidetik sejak epoch saat playlist terakhir kali diputar; `null` bila
+    /// belum pernah diputar. Dipakai Beranda untuk mengurutkan playlist
+    /// ("yang sering diputar" / favorit di depan) — lihat task 3.1.
+    int? lastPlayedAt,
   }) = _Playlist;
 
   const Playlist._();
