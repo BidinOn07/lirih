@@ -52,6 +52,74 @@ subprojects {
     }
 }
 
+// ── Patch izin on_audio_query_android (task 1.12) ───────────────────────
+// Plugin lawas (tak terawat sejak Mei 2023) meminta DUA izin di Android 13+:
+// READ_MEDIA_AUDIO dan READ_MEDIA_IMAGES. Dampaknya ganda:
+//   1) Lirih hanya butuh akses audio — meminta izin foto pada pemutar musik
+//      adalah overreach privasi (merugikan Review Play & kepercayaan user).
+//   2) permissionStatus() AND-kan kedua izin, sedangkan requestPermission()
+//      hanya mengecek grantResults[0]. Saat query dipanggil dalam keadaan
+//      "belum granted", plugin membalas method channel DUA kali
+//      (result.error lalu result.success) → "Reply already submitted" →
+//      FATAL EXCEPTION di thread main → crash. Inilah yang menjatuhkan app
+//      di perangkat Xiaomi (log: TransactionExecutor gagal + Shutting down
+//      VM). Lihat AGENTS.md §PoC & task 1.12.
+// Patch mengecilkan array izin: audio saja (API 33+) / read storage saja
+// (API ≤ 32), dan menyederhanakan retryRequestPermission() yang tadinya
+// mengakses permissions[1] (kini di luar batas). Idempoten: melompat bila
+// sudah ditambal. Sama blok afterEvaluate di atas, ini HARUS dipasang
+// sebelum evaluationDependsOn(":app") di bawah.
+subprojects {
+    afterEvaluate {
+        val controller = layout.projectDirectory
+            .file(
+                "src/main/kotlin/com/lucasjosino/on_audio_query/controllers/" +
+                    "PermissionController.kt",
+            )
+            .asFile
+        if (!controller.exists()) return@afterEvaluate
+        val patchTask = tasks.register("patchOnAudioQueryPermission") {
+            doLast {
+                val original = controller.readText()
+                if (original.contains("LIRIH-PATCHED-AUDIO-ONLY")) {
+                    return@doLast
+                }
+                controller.writeText(
+                    original
+                        .replace(
+                            Regex(
+                                "Manifest\\.permission\\.READ_MEDIA_AUDIO,\\s*" +
+                                    "Manifest\\.permission\\.READ_MEDIA_IMAGES",
+                            ),
+                            "Manifest.permission.READ_MEDIA_AUDIO" +
+                                " // LIRIH-PATCHED-AUDIO-ONLY",
+                        )
+                        .replace(
+                            Regex(
+                                "Manifest\\.permission\\.READ_EXTERNAL_STORAGE,\\s*" +
+                                    "Manifest\\.permission\\.WRITE_EXTERNAL_STORAGE",
+                            ),
+                            "Manifest.permission.READ_EXTERNAL_STORAGE",
+                        )
+                        .replace(
+                            Regex(
+                                "ActivityCompat\\.shouldShowRequestPermissionRationale" +
+                                    "\\(activity, permissions\\[0\\]\\)\\s*\\|\\|\\s*" +
+                                    "ActivityCompat\\.shouldShowRequestPermissionRationale" +
+                                    "\\(activity, permissions\\[1\\]\\)",
+                            ),
+                            "ActivityCompat.shouldShowRequestPermissionRationale" +
+                                "(activity, permissions[0])",
+                        ),
+                )
+            }
+        }
+        tasks.matching {
+            it.name == "compileDebugKotlin" || it.name == "compileReleaseKotlin"
+        }.configureEach { dependsOn(patchTask) }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }

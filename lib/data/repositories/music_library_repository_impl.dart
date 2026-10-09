@@ -31,10 +31,16 @@ class MusicLibraryRepositoryImpl implements MusicLibraryRepository {
 
   @override
   Future<Either<Failure, List<Track>>> scanLibrary() async {
-    final granted = await _scanner.hasPermission();
-    if (!granted) {
-      final requested = await _scanner.requestPermission();
-      if (!requested) return left(const PermissionDeniedFailure());
+    if (!await _scanner.hasPermission()) {
+      await _scanner.requestPermission();
+      // Jangan percayai nilai balik requestPermission(): plugin lawas
+      // on_audio_query membalas method channel DUA kali (result.error lalu
+      // result.success) bila query dipanggil saat izin belum diberikan —
+      // itu meledakkan thread native. Verifikasi status terlebih dulu;
+      // hanya lanjut bila plugin sendiri menganggap izin sudah ada.
+      if (!await _scanner.hasPermission()) {
+        return left(const PermissionDeniedFailure());
+      }
     }
 
     try {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:on_audio_query/on_audio_query.dart';
@@ -22,27 +23,62 @@ abstract interface class MediaStoreScanner {
 }
 
 /// Implementasi [MediaStoreScanner] memakai `on_audio_query` 2.9.0.
+///
+/// **Penting — mengapa setiap akses plugin diserialkan:** `on_audio_query`
+/// (plugin tak terawat) menyimpan hasil method channel di sebuah *singleton*
+/// global yang **ditimpa setiap kali sebuah method dipanggil**. Bila dua
+/// method dipanggil bersamaan — mis. pemindaian pustaka sedang menunggu
+/// dialog izin sementara Beranda memuat sampul album trek terakhir — hasil
+/// permintaan izin tertimpa oleh hasil kueri sampul. Balasan dialog izin
+/// lalu nyasar ke objek hasil yang sudah pernah dibalas:
+/// `IllegalStateException: Reply already submitted` → aplikasi lumpuh.
+///
+/// Karena itu method plugin hanya boleh berjalan satu per satu di sini.
 class OnAudioQueryMediaStoreScanner implements MediaStoreScanner {
-  /// Membuat scanner; [query] dapat disuntik untuk pengujian.
+  /// Membuat scanner; [query] dapat disuntikkan untuk pengujian.
   OnAudioQueryMediaStoreScanner([OnAudioQuery? query])
     : _query = query ?? OnAudioQuery();
 
   final OnAudioQuery _query;
 
-  @override
-  Future<bool> hasPermission() => _query.permissionsStatus();
+  /// Antrean operasi: method berikutnya menunggu operasi sebelumnya selesai.
+  Future<void>? _pending;
+
+  /// Menjalankan [action] satu per satu (lihat catatan kelas).
+  Future<T> _serialize<T>(Future<T> Function() action) async {
+    final previous = _pending;
+    final done = Completer<void>();
+    _pending = done.future;
+    try {
+      await previous;
+      return await action();
+    } finally {
+      done.complete();
+    }
+  }
 
   @override
-  Future<bool> requestPermission() => _query.permissionsRequest();
+  Future<bool> hasPermission() => _serialize(_query.permissionsStatus);
 
   @override
-  Future<List<SongModel>> querySongs() => _query.querySongs(
-    sortType: SongSortType.TITLE,
-    orderType: OrderType.ASC_OR_SMALLER,
-    uriType: UriType.EXTERNAL,
+  Future<bool> requestPermission() => _serialize(_query.permissionsRequest);
+
+  @override
+  Future<List<SongModel>> querySongs() => _serialize(
+    () => _query.querySongs(
+      sortType: SongSortType.TITLE,
+      orderType: OrderType.ASC_OR_SMALLER,
+      uriType: UriType.EXTERNAL,
+    ),
   );
 
   @override
-  Future<Uint8List?> artworkFor(int songId) =>
-      _query.queryArtwork(songId, ArtworkType.AUDIO, size: 200);
+  Future<Uint8List?> artworkFor(int songId) => _serialize(() async {
+    // Plugin membalas method channel DUA kali (result.error lalu
+    // result.success) bila sebuah query dipanggil saat izin belum
+    // diberikan → crash. Jangan panggil `queryArtwork` sebelum izin ada.
+    final granted = await _query.permissionsStatus();
+    if (!granted) return null;
+    return await _query.queryArtwork(songId, ArtworkType.AUDIO, size: 200);
+  });
 }

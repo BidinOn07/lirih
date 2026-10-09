@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:lirih/core/di/injection.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/library/library_scan_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'artwork_provider.g.dart';
@@ -22,6 +23,13 @@ class ArtworkCache extends _$ArtworkCache {
   Future<Uint8List?> artworkFor(Track track) {
     final id = track.mediaStoreId;
     if (id == null) return Future<Uint8List?>.value();
+    // Sampul hanya bisa dibaca setelah pustaka berhasil dipindai (izin
+    // media sudah diberikan). Sebelum itu MediaStore belum terbuka —
+    // memaksa query justru meledakkan plugin lawas ini (lihat catatan di
+    // [OnAudioQueryMediaStoreScanner]). Hasil kosong tidak di-cache agar
+    // otomatis dicoba ulang setelah pemindaian selesai.
+    final scan = ref.read(libraryScanControllerProvider);
+    if (!scan.hasValue) return Future<Uint8List?>.value();
     return state.putIfAbsent(id, () {
       final scanner = ref.read(mediaStoreScannerProvider);
       return scanner.artworkFor(id);

@@ -75,3 +75,5 @@ assets/samples/*
 
 
 .vscode/templates
+# Widget Preview related
+.widget_preview/

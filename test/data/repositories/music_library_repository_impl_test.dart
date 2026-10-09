@@ -79,14 +79,30 @@ void main() {
     });
 
     test('izin awal ditolak lalu diberikan → tetap memindai', () async {
-      when(() => scanner.hasPermission()).thenAnswer((_) async => false);
-      when(() => scanner.requestPermission()).thenAnswer((_) async => true);
+      // Status dicek ulang setelah permintaan (lihat scanLibrary) — panggilan
+      // pertama false (sebelum izin), kedua true (setelah diberikan).
+      var granted = false;
+      when(() => scanner.hasPermission()).thenAnswer((_) async => granted);
+      when(() => scanner.requestPermission()).thenAnswer((_) async {
+        granted = true;
+        return true;
+      });
       when(() => scanner.querySongs()).thenAnswer((_) async => [_song()]);
 
       final result = await repository.scanLibrary();
 
       expect(result.isRight(), true);
       verify(() => scanner.requestPermission()).called(1);
+    });
+
+    test('izin diminta lalu masih ditolak → PermissionDeniedFailure', () async {
+      when(() => scanner.hasPermission()).thenAnswer((_) async => false);
+      when(() => scanner.requestPermission()).thenAnswer((_) async => true);
+
+      final result = await repository.scanLibrary();
+
+      expect(requireLeft(result), isA<PermissionDeniedFailure>());
+      verifyNever(() => scanner.querySongs());
     });
 
     test('izin ditolak permanen → PermissionDeniedFailure', () async {

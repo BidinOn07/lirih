@@ -1,9 +1,25 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Background playback (task 1.7): foreground service untuk pemutar. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <!-- Notifikasi kontrol media (Android 13+ minta saat runtime). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Akses pustaka audio lokal (task 1.12). Tanpa deklarasi ini sistem
+         menolak permintaan izin baca media secara diam-diam → pustaka kosong
+         dan akhirnya memicu jalur error plugin yang meledak (lihat catatan
+         patch on_audio_query_android di android/build.gradle.kts).
+         READ_MEDIA_AUDIO untuk Android 13+; READ_EXTERNAL_STORAGE (dengan
+         maxSdkVersion 32) untuk Android 12 ke bawah. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <!-- Lirih v1 murni offline (AGENTS.md) — buang permission jaringan yang
+         ikut terbawa dari dependensi transitive supaya manifest final,
+         listing Play, dan Privacy Policy semuanya konsisten. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
     <application
         android:label="Lirih"
         android:name="${applicationName}"
