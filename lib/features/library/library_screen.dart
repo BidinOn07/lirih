@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lirih/core/constants/app_colors.dart';
@@ -6,6 +8,7 @@ import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/playlist.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
+import 'package:lirih/features/library/sort_mode.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/playlists/add_to_playlist_sheet.dart';
 import 'package:lirih/features/playlists/playlist_detail_screen.dart';
@@ -54,34 +57,158 @@ class LibraryScreen extends ConsumerWidget {
       error is Failure ? error : const ScanFailure();
 }
 
-/// Isi Pustaka: strip playlist di puncak, lalu seluruh trek.
-class _LibraryContent extends ConsumerWidget {
+/// Isi Pustaka: strip playlist di puncak, pemilih bagian
+/// (Lagu/Artis/Album), lalu isi bagian yang dipilih (task 2.5).
+///
+/// Artis & album diturunkan dari daftar trek yang sudah dipindai
+/// (pengelompokan di memori) sehingga tidak butuh kueri MediaStore tambahan.
+class _LibraryContent extends ConsumerStatefulWidget {
   const _LibraryContent({required this.tracks});
 
   final List<Track> tracks;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LibraryContent> createState() => _LibraryContentState();
+}
+
+class _LibraryContentState extends ConsumerState<_LibraryContent> {
+  /// 0 = Lagu, 1 = Artis, 2 = Album.
+  int _section = 0;
+
+  SortMode _sort = SortMode.title;
+
+  /// Memutar [first] dalam konteks antrean [queue].
+  void _play(Track first, List<Track> queue) {
+    unawaited(
+      ref
+          .read(playerControllerProvider.notifier)
+          .playTrack(first, queue: queue),
+    );
+  }
+
+  /// Membandingkan dua label secara *case-insensitive* (urutan abjad).
+  int _byLabel(String a, String b) =>
+      a.toLowerCase().compareTo(b.toLowerCase());
+
+  /// Daftar trek diurutkan sesuai [_sort].
+  List<Track> _sortedTracks() {
+    final tracks = List<Track>.of(widget.tracks);
+    return tracks..sort((a, b) {
+      switch (_sort) {
+        case SortMode.artist:
+          return _byLabel(a.artist, b.artist);
+        case SortMode.album:
+          return _byLabel(a.album ?? '~~', b.album ?? '~~');
+        case SortMode.title:
+          return _byLabel(a.title, b.title);
+      }
+    });
+  }
+
+  /// Mengelompokkan trek berdasarkan [keyOf], terurut abjad per nama grup.
+  List<MapEntry<String, List<Track>>> _groupedBy(String Function(Track) keyOf) {
+    final groups = <String, List<Track>>{};
+    for (final track in widget.tracks) {
+      groups.putIfAbsent(keyOf(track), () => <Track>[]).add(track);
+    }
+    final entries = groups.entries.toList();
+    return entries..sort((a, b) => _byLabel(a.key, b.key));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
         const SliverToBoxAdapter(child: _PlaylistsStrip()),
-        const SliverToBoxAdapter(child: _TracksHeader()),
-        SliverList.separated(
-          itemCount: tracks.length,
-          separatorBuilder: (_, _) =>
-              const Divider(color: AppColors.soga700, height: 1),
-          itemBuilder: (context, index) {
-            final track = tracks[index];
-            return _TrackRow(
-              track: track,
-              onTap: () => ref
-                  .read(playerControllerProvider.notifier)
-                  .playTrack(track, queue: tracks),
-              onLongPress: () => showAddToPlaylistSheet(context, track),
-            );
-          },
+        SliverToBoxAdapter(
+          child: _SectionTabs(
+            section: _section,
+            onChanged: (section) => setState(() => _section = section),
+          ),
         ),
+        ..._sectionSlivers(),
       ],
+    );
+  }
+
+  /// Sliver isi sesuai bagian yang sedang dipilih.
+  List<Widget> _sectionSlivers() {
+    switch (_section) {
+      case 1:
+        return [
+          _GroupsSliver(
+            groups: _groupedBy((track) => track.artist),
+            icon: Icons.person_outline,
+          ),
+        ];
+      case 2:
+        return [
+          _GroupsSliver(
+            groups: _groupedBy((track) => track.album ?? 'Tanpa album'),
+            icon: Icons.album_outlined,
+          ),
+        ];
+      default:
+        final sorted = _sortedTracks();
+        return [
+          SliverToBoxAdapter(
+            child: _TracksHeader(
+              sort: _sort,
+              onSortChanged: (sort) => setState(() => _sort = sort),
+            ),
+          ),
+          SliverList.separated(
+            itemCount: sorted.length,
+            separatorBuilder: (_, _) =>
+                const Divider(color: AppColors.soga700, height: 1),
+            itemBuilder: (context, index) {
+              final track = sorted[index];
+              return _TrackRow(
+                track: track,
+                onTap: () => _play(track, sorted),
+                onLongPress: () => showAddToPlaylistSheet(context, track),
+              );
+            },
+          ),
+        ];
+    }
+  }
+}
+
+/// Pemilih bagian Pustaka: Lagu / Artis / Album.
+class _SectionTabs extends StatelessWidget {
+  const _SectionTabs({required this.section, required this.onChanged});
+
+  final int section;
+
+  final ValueChanged<int> onChanged;
+
+  static const _labels = <String>['Lagu', 'Artis', 'Album'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      child: Row(
+        children: [
+          for (var i = 0; i < _labels.length; i++) ...[
+            ChoiceChip(
+              label: Text(_labels[i]),
+              selected: section == i,
+              onSelected: (_) => onChanged(i),
+              selectedColor: AppColors.kunir600,
+              backgroundColor: AppColors.soga800,
+              side: const BorderSide(color: AppColors.soga700),
+              labelStyle: TextStyle(
+                color: section == i ? AppColors.soga50 : AppColors.soga300,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -233,9 +360,13 @@ class _PlaylistCard extends StatelessWidget {
   }
 }
 
-/// Judul "Semua lagu" + jumlah.
+/// Judul "Semua lagu" + jumlah + pengurutan (task 2.5).
 class _TracksHeader extends ConsumerWidget {
-  const _TracksHeader();
+  const _TracksHeader({required this.sort, required this.onSortChanged});
+
+  final SortMode sort;
+
+  final ValueChanged<SortMode> onSortChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -244,7 +375,7 @@ class _TracksHeader extends ConsumerWidget {
         .maybeWhen(data: (tracks) => tracks.length, orElse: () => 0);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 8, 12, 4),
       child: Row(
         children: [
           const Text(
@@ -260,8 +391,93 @@ class _TracksHeader extends ConsumerWidget {
             '$count trek',
             style: const TextStyle(color: AppColors.soga400, fontSize: 13),
           ),
+          const Spacer(),
+          PopupMenuButton<SortMode>(
+            tooltip: 'Urutkan',
+            icon: const Icon(Icons.sort, color: AppColors.soga200, size: 20),
+            onSelected: onSortChanged,
+            itemBuilder: (_) => [
+              for (final mode in SortMode.values)
+                PopupMenuItem(
+                  value: mode,
+                  child: Row(
+                    children: [
+                      Icon(
+                        mode == sort ? Icons.check : Icons.sort_by_alpha,
+                        size: 18,
+                        color: mode == sort
+                            ? AppColors.kunir500
+                            : AppColors.soga300,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        mode.label,
+                        style: TextStyle(
+                          color: mode == sort
+                              ? AppColors.soga50
+                              : AppColors.soga200,
+                          fontWeight: mode == sort
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// Daftar kelompok (artis atau album) beserta jumlah treknya (task 2.5).
+///
+/// Menekan sebuah kelompok memutar seluruh trek di dalamnya, dimulai dari
+/// trek pertama kelompok tersebut.
+class _GroupsSliver extends ConsumerWidget {
+  const _GroupsSliver({required this.groups, required this.icon});
+
+  /// Nama kelompok → trek-treknya, sudah terurut abjad.
+  final List<MapEntry<String, List<Track>>> groups;
+
+  /// Ikon pembeda (artis vs album).
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SliverList.separated(
+      itemCount: groups.length,
+      separatorBuilder: (_, _) =>
+          const Divider(color: AppColors.soga700, height: 1),
+      itemBuilder: (context, index) {
+        final group = groups[index];
+        final tracks = group.value;
+        return ListTile(
+          onTap: () => ref
+              .read(playerControllerProvider.notifier)
+              .playTrack(tracks.first, queue: tracks),
+          leading: CircleAvatar(
+            backgroundColor: AppColors.soga800,
+            child: Icon(icon, color: AppColors.kunir500, size: 20),
+          ),
+          title: Text(
+            group.key,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.soga50,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            '${tracks.length} trek',
+            style: const TextStyle(color: AppColors.soga300, fontSize: 13),
+          ),
+        );
+      },
     );
   }
 }
