@@ -122,6 +122,15 @@ class DspChannel {
   /// Menghentikan playback.
   Future<void> stop() => _channel.invokeMethod<void>('stop');
 
+  /// Memindahkan aplikasi ke background tanpa mematikan pemutar.
+  ///
+  /// Dipakai saat pengguna menekan tombol/gesture **back** di halaman
+  /// utama: app hanya di-minimize (seperti tombol Home) sehingga
+  /// foreground service pemutar tetap berjalan. Pemutar benar-benar
+  /// berhenti hanya jika app dimatikan dari daftar aplikasi terbuka.
+  Future<void> moveToBackground() =>
+      _channel.invokeMethod<void>('moveTaskToBack');
+
   /// Melompat ke [position].
   Future<void> seek(Duration position) => _channel.invokeMethod<void>(
     'seek',

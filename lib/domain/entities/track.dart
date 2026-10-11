@@ -38,6 +38,19 @@ abstract class Track with _$Track {
     /// diambil dari MediaStore, bukan nama berkas.
     String? fileExtension,
 
+    /// Ukuran berkas audio dalam byte (task 3.5). `null` bila MediaStore
+    /// tidak menyediakannya. Dipakai di sheet info lagu.
+    int? sizeBytes,
+
+    /// Path induk berkas audio (mis. `/storage/emulated/0/Music/Rilis`).
+    /// `null` bila path asli tidak tersedia (Android 13+ sering menyembunyikan
+    /// kolom `DATA` MediaStore). Dipakai fitur "Buka folder" (task 3.5).
+    String? folder,
+
+    /// Nama berkas audio beserta ekstensi (mis. `lagu.mp3`). `null` bila
+    /// path asli tidak tersedia.
+    String? fileName,
+
     /// URI sampul album (content:// dari MediaStore). `null` bila tak ada.
     String? artUri,
 
@@ -59,6 +72,25 @@ abstract class Track with _$Track {
     final ext = fileExtension;
     if (ext == null || ext.isEmpty) return '—';
     return ext.toUpperCase();
+  }
+
+  /// Ukuran berkas yang mudah dibaca — mis. `3,2 MB`, `512 KB`; `—` bila
+  /// [sizeBytes] tidak diketahui.
+  String get sizeLabel {
+    final bytes = sizeBytes;
+    if (bytes == null || bytes <= 0) return '—';
+    const units = <String>['B', 'KB', 'MB', 'GB'];
+    var value = bytes.toDouble();
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    final formatted = unit == 0
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
+    final sep = formatted.contains('.') ? ',' : '';
+    return '${formatted.replaceAll('.', sep)} ${units[unit]}';
   }
 
   /// Absolute path atau `content://` URI berkas audio (v1 selalu lokal).

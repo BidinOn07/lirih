@@ -16,6 +16,15 @@ abstract final class HiveBoxes {
   /// Daftar putar pengguna (task 3.1).
   static const String playlists = 'playlistsBox';
 
+  /// Trek yang ditandai favorit pengguna (task 3.1).
+  static const String favorites = 'favoritesBox';
+
+  /// Perubahan tag (judul/artis/album/nomor trek/lirik) yang ditulis
+  /// pengguna via sheet "Edit info lagu" (task 3.5). Key = path sumber
+  /// trek (stabil — tidak berubah saat tag diedit, beda dengan
+  /// `stableTrackId`), value = map field yang diubah.
+  static const String trackTags = 'trackTagsBox';
+
   /// Lirik tersimpan per trek (task 3.2).
   static const String lyrics = 'lyricsBox';
 
@@ -43,6 +52,8 @@ class HiveService {
       _openSafe(HiveBoxes.recents),
       _openSafe(HiveBoxes.searchHistory),
       _openSafe(HiveBoxes.playlists),
+      _openSafe(HiveBoxes.favorites),
+      _openSafe(HiveBoxes.trackTags),
       _openSafe(HiveBoxes.lyrics),
       _openSafe(HiveBoxes.settings),
     ]);

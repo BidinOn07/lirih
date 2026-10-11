@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
-import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/player/mini_player.dart';
 import 'package:lirih/features/player/player_controller.dart';
-import 'package:lirih/features/playlists/add_to_playlist_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
+import 'package:lirih/shared/widgets/track_row.dart';
 
 /// Layar detail album — trek pada album tersebut (task 2.5).
 ///
@@ -58,6 +58,9 @@ class AlbumDetailScreen extends ConsumerWidget {
         foregroundColor: AppColors.soga50,
         title: Text(album, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
+      // Mini player hidup di MainShell, tetapi layar ini di-push sebagai
+      // route penuh yang menutupinya — pasang ulang di sini (task 3.5).
+      bottomNavigationBar: const MiniPlayerBottomBar(),
       body: sorted.isEmpty
           ? const Center(
               child: Text(
@@ -77,15 +80,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                       .playTrack(sorted.first, queue: sorted),
                 ),
                 const Divider(color: AppColors.soga700, height: 1),
-                ...sorted.map(
-                  (track) => _AlbumTrackRow(
-                    track: track,
-                    onTap: () => ref
-                        .read(playerControllerProvider.notifier)
-                        .playTrack(track, queue: sorted),
-                    onLongPress: () => showAddToPlaylistSheet(context, track),
-                  ),
-                ),
+                ...sorted.map((track) => TrackRow(track: track, queue: sorted)),
                 const SizedBox(height: 24),
               ],
             ),
@@ -171,49 +166,6 @@ class _AlbumHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Satu baris trek album — menampilkan nomor trek (bila ada) di kiri.
-class _AlbumTrackRow extends StatelessWidget {
-  const _AlbumTrackRow({
-    required this.track,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  final Track track;
-
-  final VoidCallback onTap;
-
-  final VoidCallback onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      title: Text(
-        track.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: AppColors.soga50,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        track.artist,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: AppColors.soga300, fontSize: 13),
-      ),
-      trailing: Text(
-        formatTrackDuration(track.durationMs),
-        style: const TextStyle(color: AppColors.soga400, fontSize: 13),
       ),
     );
   }

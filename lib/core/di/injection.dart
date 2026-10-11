@@ -1,6 +1,7 @@
 import 'package:lirih/data/datasources/local/media_store_scanner.dart';
 import 'package:lirih/data/repositories/music_library_repository_impl.dart';
 import 'package:lirih/domain/repositories/music_library_repository.dart';
+import 'package:lirih/features/track_tags/track_tags_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'injection.g.dart';
@@ -13,4 +14,7 @@ MediaStoreScanner mediaStoreScanner(Ref ref) => OnAudioQueryMediaStoreScanner();
 /// agar layer presentation tidak bergantung pada implementasi `on_audio_query`.
 @riverpod
 MusicLibraryRepository musicLibraryRepository(Ref ref) =>
-    MusicLibraryRepositoryImpl(ref.watch(mediaStoreScannerProvider));
+    MusicLibraryRepositoryImpl(
+      ref.watch(mediaStoreScannerProvider),
+      ref.watch(trackTagsControllerProvider),
+    );

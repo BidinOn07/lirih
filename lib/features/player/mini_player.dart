@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/features/player/player_screen.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
 import 'package:lirih/features/player/track_info_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
@@ -167,6 +168,27 @@ class _MiniIconButton extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 30, minHeight: 40),
+    );
+  }
+}
+
+/// Versi [MiniPlayerBar] yang siap dipasang di `bottomNavigationBar` layar
+/// detail (task 3.5).
+///
+/// Layar detail seperti album, artis, dan playlist di-push sebagai route
+/// penuh yang menutupi shell utama — padahal mini player hidup di sana.
+/// Tanpa widget ini, mini player tidak muncul di layar tersebut walau ada
+/// trek aktif. Widget ini membuka layar Pemutar sendiri lewat Navigator,
+/// sehingga mini player tetap sinkron di mana pun trek dimainkan.
+class MiniPlayerBottomBar extends StatelessWidget {
+  /// Membuat bar untuk dipasang di `bottomNavigationBar`.
+  const MiniPlayerBottomBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MiniPlayerBar(
+      onOpenPlayer: () => Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen())),
     );
   }
 }

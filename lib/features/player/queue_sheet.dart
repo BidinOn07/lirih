@@ -7,6 +7,7 @@ import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/features/track_tags/track_options_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Membuka *bottom sheet* antrean pemutar (task 2.9).
@@ -266,6 +267,13 @@ class _QueueRow extends StatelessWidget {
               Text(
                 formatTrackDuration(track.durationMs),
                 style: const TextStyle(color: AppColors.soga400, fontSize: 12),
+              ),
+              IconButton(
+                onPressed: () => showTrackOptionsSheet(context, track),
+                icon: const Icon(Icons.more_vert),
+                color: AppColors.soga200,
+                iconSize: 20,
+                tooltip: 'Opsi',
               ),
               IconButton(
                 onPressed: onRemove,

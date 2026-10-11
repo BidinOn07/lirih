@@ -55,7 +55,7 @@ final class LibraryScanControllerProvider
 }
 
 String _$libraryScanControllerHash() =>
-    r'518274d1acef0887d27d66d990f5f7ea707ac3c8';
+    r'79146035b80c9539e86aa25eda91df1861e69672';
 
 /// Status pemindaian pustaka (task 1.12) — sumber kebenaran daftar lagu
 /// untuk tab Tracks/Home.

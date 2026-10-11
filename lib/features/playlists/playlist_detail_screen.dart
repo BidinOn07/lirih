@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/player/mini_player.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/playlists/playlist_form_sheet.dart';
 import 'package:lirih/features/playlists/playlists_controller.dart';
+import 'package:lirih/features/track_tags/track_options_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Layar detail playlist (task 3.1) — daftar trek yang dapat diputar,
@@ -49,6 +51,17 @@ class PlaylistDetailScreen extends ConsumerWidget {
       );
     }
 
+    /// Memutar dengan mode khusus (acak / terakhir dimainkan) sekaligus
+    /// memperbarui `lastPlayedAt` — sama seperti [playFromPlaylist].
+    Future<void> playWithMode(
+      Future<void> Function(PlayerController) action,
+    ) async {
+      await ref
+          .read(playlistsControllerProvider.notifier)
+          .markPlayed(playlistId);
+      unawaited(action(ref.read(playerControllerProvider.notifier)));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.soga900,
       appBar: AppBar(
@@ -76,24 +89,59 @@ class PlaylistDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // Mini player hidup di MainShell, tetapi layar ini di-push sebagai
+      // route penuh yang menutupinya — pasang ulang di sini (task 3.5).
+      bottomNavigationBar: const MiniPlayerBottomBar(),
       body: tracks.isEmpty
           ? const _EmptyPlaylist()
           : Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => playFromPlaylist(tracks.first),
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Putar semua'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.kunir600,
-                        foregroundColor: AppColors.soga50,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => playFromPlaylist(tracks.first),
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Putar semua'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.kunir600,
+                            foregroundColor: AppColors.soga50,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // Putar trek terakhir yang dimainkan dalam playlist
+                      // ini; bila belum ada, mainkan trek pertama saja.
+                      OutlinedButton.icon(
+                        onPressed: () => playWithMode(
+                          (notifier) => notifier.playLastPlayed(tracks),
+                        ),
+                        icon: const Icon(Icons.history, size: 18),
+                        label: const Text('Terakhir dimainkan'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.soga100,
+                          side: const BorderSide(color: AppColors.soga600),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Acak: ikon saja, langsung memutar urutan acak.
+                      IconButton(
+                        onPressed: () => playWithMode(
+                          (notifier) => notifier.playShuffled(tracks),
+                        ),
+                        icon: const Icon(Icons.shuffle),
+                        color: AppColors.soga100,
+                        tooltip: 'Putar acak',
+                        style: IconButton.styleFrom(
+                          side: const BorderSide(color: AppColors.soga600),
+                          padding: const EdgeInsets.all(14),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -209,6 +257,13 @@ class _PlaylistTrackRow extends StatelessWidget {
           Text(
             formatTrackDuration(track.durationMs),
             style: const TextStyle(color: AppColors.soga400, fontSize: 12),
+          ),
+          IconButton(
+            onPressed: () => showTrackOptionsSheet(context, track),
+            icon: const Icon(Icons.more_vert),
+            color: AppColors.soga200,
+            iconSize: 20,
+            tooltip: 'Opsi',
           ),
           IconButton(
             onPressed: onRemove,

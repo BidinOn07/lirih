@@ -218,6 +218,13 @@ class DspPlugin(
                     }
                     activity.startActivityForResult(intent, RC_PICK_PLAYLIST_FILE)
                 }
+                "moveTaskToBack" -> {
+                    // Back gesture di root harus memindahkan app ke
+                    // background (seperti tombol Home), BUKAN keluar —
+                    // agar foreground service & ExoPlayer tetap hidup.
+                    activity.moveTaskToBack(true)
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         } catch (e: Exception) {

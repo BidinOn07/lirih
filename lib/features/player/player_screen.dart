@@ -6,12 +6,14 @@ import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/frequency_preset.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/favorites/favorites_controller.dart';
 import 'package:lirih/features/lyrics/lyrics_panel.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
 import 'package:lirih/features/player/queue_sheet.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
 import 'package:lirih/features/player/sleep_timer_controller.dart';
+import 'package:lirih/features/player/track_info_sheet.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Layar Pemutar (task 2.7) + **penyetel frekuensi** 440/432/528 Hz
@@ -31,11 +33,11 @@ class PlayerScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.soga900,
-      appBar: AppBar(
-        backgroundColor: AppColors.soga800,
-        foregroundColor: AppColors.soga50,
-        title: const Text('Pemutar'),
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: AppColors.soga800,
+      //   foregroundColor: AppColors.soga50,
+      //   title: const Text('Pemutar'),
+      // ),
       body: track == null
           ? const _EmptyPlayer()
           : ListView(
@@ -61,21 +63,67 @@ class PlayerScreen extends ConsumerWidget {
   }
 }
 
-/// Baris aksi tambahan: antrean, lirik, sleep timer.
+/// Baris aksi tambahan: favorit, antrean, lirik, sleep timer, dan info
+/// lagu — ikon saja agar ringkas (task 3.1 & 3.5).
 class _PlayerActions extends StatelessWidget {
   const _PlayerActions();
 
   @override
   Widget build(BuildContext context) {
     return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
+        _FavoriteButton(),
         _QueueButton(),
-        SizedBox(width: 8),
         _LyricsButton(),
-        SizedBox(width: 8),
         _SleepTimerButton(),
+        _TrackInfoButton(),
       ],
+    );
+  }
+}
+
+/// Tombol membuka sheet info lagu lengkap (judul, artis, album, trek,
+/// durasi, format, frekuensi, ukuran, berkas, folder) plus aksi edit —
+/// task 3.5.
+class _TrackInfoButton extends ConsumerWidget {
+  const _TrackInfoButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final track = ref.watch(playerControllerProvider).currentTrack;
+    if (track == null) return const SizedBox.shrink();
+
+    return IconButton(
+      tooltip: 'Info lagu',
+      onPressed: () => showTrackInfoSheet(context, track),
+      icon: const Icon(Icons.more_vert, color: AppColors.soga200),
+    );
+  }
+}
+
+/// Tombol menandai trek aktif sebagai favorit (task 3.1).
+class _FavoriteButton extends ConsumerWidget {
+  const _FavoriteButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final track = ref.watch(playerControllerProvider).currentTrack;
+    if (track == null) return const SizedBox.shrink();
+
+    final isFavorite = ref
+        .watch(favoritesControllerProvider)
+        .any((favorite) => favorite.id == track.id);
+    final notifier = ref.read(favoritesControllerProvider.notifier);
+
+    return IconButton(
+      tooltip: isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit',
+      onPressed: () => notifier.toggle(track),
+      icon: Icon(
+        isFavorite ? Icons.favorite : Icons.favorite_border,
+        color: isFavorite ? AppColors.kunir500 : AppColors.soga200,
+        size: 22,
+      ),
     );
   }
 }
@@ -86,10 +134,10 @@ class _QueueButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton.icon(
+    return IconButton(
+      tooltip: 'Antrean',
       onPressed: () => showQueueSheet(context),
-      icon: const Icon(Icons.queue_music, color: AppColors.soga200),
-      label: const Text('Antrean', style: TextStyle(color: AppColors.soga200)),
+      icon: const Icon(Icons.queue_music, color: AppColors.soga200, size: 22),
     );
   }
 }
@@ -103,19 +151,13 @@ class _LyricsButton extends ConsumerWidget {
     final visible = ref.watch(lyricsVisibilityProvider);
     final notifier = ref.read(lyricsVisibilityProvider.notifier);
 
-    return TextButton.icon(
+    return IconButton(
+      tooltip: 'Lirik',
       onPressed: notifier.toggle,
       icon: Icon(
         visible ? Icons.lyrics : Icons.lyrics_outlined,
         color: visible ? AppColors.nila400 : AppColors.soga200,
-        size: 20,
-      ),
-      label: Text(
-        'Lirik',
-        style: TextStyle(
-          color: visible ? AppColors.nila400 : AppColors.soga200,
-          fontWeight: visible ? FontWeight.w600 : FontWeight.w400,
-        ),
+        size: 22,
       ),
     );
   }
@@ -147,31 +189,23 @@ class _SleepTimerButton extends ConsumerWidget {
               PopupMenuItem<int>(value: minutes, child: Text('$minutes menit')),
         ),
       ],
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            active ? Icons.timer : Icons.timer_outlined,
-            color: active ? AppColors.kunir500 : AppColors.soga200,
-            size: 20,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            active ? 'Timer ${_formatRemaining(remaining)}' : 'Sleep timer',
-            style: TextStyle(
-              color: active ? AppColors.kunir500 : AppColors.soga200,
-              fontSize: 14,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
-        ],
+      child: Badge(
+        isLabelVisible: active,
+        backgroundColor: AppColors.kunir600,
+        label: active
+            ? Text(
+                '${remaining.inMinutes}',
+                style: const TextStyle(color: AppColors.soga50, fontSize: 10),
+              )
+            : const SizedBox.shrink(),
+        child: Icon(
+          active ? Icons.timer : Icons.timer_outlined,
+          color: active ? AppColors.kunir500 : AppColors.soga200,
+          size: 22,
+        ),
       ),
     );
   }
-
-  /// Sisa timer sebagai `m:ss`.
-  String _formatRemaining(Duration d) =>
-      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 }
 
 /// Sampul album trek aktif (task 3.4) — ukuran penuh sesuai lebar layar.
@@ -383,7 +417,7 @@ class _FrequencyTuner extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Penyetelan frekuensi',
+                'Set Frekuensi (Hz)',
                 style: TextStyle(
                   color: AppColors.soga100,
                   fontSize: 14,
@@ -443,7 +477,7 @@ class _FrequencyTuner extends ConsumerWidget {
             onChanged: notifier.setFrequency,
           ),
           const Text(
-            'Geser untuk frekuensi bebas (400–600 Hz). Pitch berubah '
+            'Geser untuk frekuensi bebas (400–600 Hz). "Pitch berubah" '
             'real-time tanpa mengubah tempo.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.soga400, fontSize: 12),

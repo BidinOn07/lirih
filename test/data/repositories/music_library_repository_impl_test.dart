@@ -43,7 +43,10 @@ void main() {
 
   setUp(() {
     scanner = _MockMediaStoreScanner();
-    repository = MusicLibraryRepositoryImpl(scanner);
+    repository = MusicLibraryRepositoryImpl(
+      scanner,
+      const <String, Map<String, dynamic>>{},
+    );
   });
 
   group('MusicLibraryRepositoryImpl', () {
@@ -67,6 +70,10 @@ void main() {
         (track.source as LocalSource).filePath,
         'content://media/external/audio/media/42',
       );
+      // Metadata tambahan untuk sheet info lagu (task 3.5).
+      expect(track.sizeBytes, 7239603);
+      expect(track.fileName, 'lagu.mp3');
+      expect(track.folder, 'Music');
     });
 
     test('izin sudah diberikan → tidak meminta ulang', () async {
@@ -103,6 +110,29 @@ void main() {
 
       expect(requireLeft(result), isA<PermissionDeniedFailure>());
       verifyNever(() => scanner.querySongs());
+    });
+
+    test('override tag pengguna diterapkan saat memindai (task 3.5)',
+        () async {
+      when(() => scanner.hasPermission()).thenAnswer((_) async => true);
+      when(() => scanner.querySongs()).thenAnswer((_) async => [_song()]);
+
+      const tags = <String, Map<String, dynamic>>{
+        'content://media/external/audio/media/42': {
+          'title': 'Judul Baru',
+          'artist': 'Artis Baru',
+          'album': 'Album Baru',
+          'trackNumber': 7,
+        },
+      };
+      final tagged = MusicLibraryRepositoryImpl(scanner, tags);
+      final result = await tagged.scanLibrary();
+      final track = result.getOrThrow().single;
+
+      expect(track.title, 'Judul Baru');
+      expect(track.artist, 'Artis Baru');
+      expect(track.album, 'Album Baru');
+      expect(track.trackNumber, 7);
     });
 
     test('izin ditolak permanen → PermissionDeniedFailure', () async {

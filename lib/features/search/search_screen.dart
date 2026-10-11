@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
-import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
-import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/search/search_history_controller.dart';
-import 'package:lirih/shared/widgets/track_artwork.dart';
+import 'package:lirih/shared/widgets/track_row.dart';
 
 /// Layar Pencarian (task 3.5) — menyaring trek pustaka berdasarkan judul,
 /// artis, atau album.
@@ -85,7 +83,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.soga800,
         foregroundColor: AppColors.soga50,
-        title: const Text('Cari'),
+        title: const Text('Search'),
       ),
       body: Column(
         children: [
@@ -105,9 +103,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     history: history,
                     lastSearch: notifier.lastSearch,
                     onTapQuery: _applyQuery,
-                    onPlay: (track, queue) => ref
-                        .read(playerControllerProvider.notifier)
-                        .playTrack(track, queue: queue),
                   )
                 : results.isEmpty
                 ? _Hint(text: 'Tidak ada lagu yang cocok dengan "$_query".')
@@ -182,7 +177,6 @@ class _SearchHome extends ConsumerWidget {
     required this.history,
     required this.lastSearch,
     required this.onTapQuery,
-    required this.onPlay,
   });
 
   final List<String> history;
@@ -190,8 +184,6 @@ class _SearchHome extends ConsumerWidget {
   final LastSearch? lastSearch;
 
   final ValueChanged<String> onTapQuery;
-
-  final void Function(Track track, List<Track> queue) onPlay;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -205,7 +197,7 @@ class _SearchHome extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Pernah dicari',
+                  'Pencarian Terakhir',
                   style: TextStyle(
                     color: AppColors.soga200,
                     fontSize: 14,
@@ -276,10 +268,7 @@ class _SearchHome extends ConsumerWidget {
             ),
           ),
           ...lastSearch!.tracks.map(
-            (track) => _TrackRow(
-              track: track,
-              onTap: () => onPlay(track, lastSearch!.tracks),
-            ),
+            (track) => TrackRow(track: track, queue: lastSearch!.tracks),
           ),
         ],
         if (history.isEmpty && lastSearch == null)
@@ -324,51 +313,8 @@ class _Results extends ConsumerWidget {
       separatorBuilder: (_, _) =>
           const Divider(color: AppColors.soga700, height: 1),
       itemBuilder: (context, index) {
-        final track = tracks[index];
-        return _TrackRow(
-          track: track,
-          onTap: () => ref
-              .read(playerControllerProvider.notifier)
-              .playTrack(track, queue: tracks),
-        );
+        return TrackRow(track: tracks[index], queue: tracks);
       },
-    );
-  }
-}
-
-/// Satu baris trek: sampul, judul, artis, durasi.
-class _TrackRow extends StatelessWidget {
-  const _TrackRow({required this.track, required this.onTap});
-
-  final Track track;
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: TrackArtwork(track: track),
-      title: Text(
-        track.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: AppColors.soga50,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        track.artist,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: AppColors.soga300, fontSize: 13),
-      ),
-      trailing: Text(
-        formatTrackDuration(track.durationMs),
-        style: const TextStyle(color: AppColors.soga400, fontSize: 13),
-      ),
     );
   }
 }

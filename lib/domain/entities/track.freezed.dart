@@ -25,7 +25,14 @@ mixin _$Track {
  int? get trackNumber;/// Ekstensi berkas audio tanpa titik — mis. `mp3`, `flac`, `opus`.
 /// Dipakai menampilkan codec pada info lagu (task 3.1). Nilai ini
 /// diambil dari MediaStore, bukan nama berkas.
- String? get fileExtension;/// URI sampul album (content:// dari MediaStore). `null` bila tak ada.
+ String? get fileExtension;/// Ukuran berkas audio dalam byte (task 3.5). `null` bila MediaStore
+/// tidak menyediakannya. Dipakai di sheet info lagu.
+ int? get sizeBytes;/// Path induk berkas audio (mis. `/storage/emulated/0/Music/Rilis`).
+/// `null` bila path asli tidak tersedia (Android 13+ sering menyembunyikan
+/// kolom `DATA` MediaStore). Dipakai fitur "Buka folder" (task 3.5).
+ String? get folder;/// Nama berkas audio beserta ekstensi (mis. `lagu.mp3`). `null` bila
+/// path asli tidak tersedia.
+ String? get fileName;/// URI sampul album (content:// dari MediaStore). `null` bila tak ada.
  String? get artUri;/// Durasi dalam milidetik.
  int? get durationMs;/// Terakhir diputar — dipakai tab "Putar terakhir" (task 2.6).
  DateTime? get lastPlayedAt;
@@ -40,20 +47,20 @@ $TrackCopyWith<Track> get copyWith => _$TrackCopyWithImpl<Track>(this as Track, 
 @override
 bool operator ==(Object other) {
   final _this = this as Track;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Track&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.album, _this.album) || other.album == _this.album)&&(identical(other.trackNumber, _this.trackNumber) || other.trackNumber == _this.trackNumber)&&(identical(other.fileExtension, _this.fileExtension) || other.fileExtension == _this.fileExtension)&&(identical(other.artUri, _this.artUri) || other.artUri == _this.artUri)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.lastPlayedAt, _this.lastPlayedAt) || other.lastPlayedAt == _this.lastPlayedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Track&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.artist, _this.artist) || other.artist == _this.artist)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.album, _this.album) || other.album == _this.album)&&(identical(other.trackNumber, _this.trackNumber) || other.trackNumber == _this.trackNumber)&&(identical(other.fileExtension, _this.fileExtension) || other.fileExtension == _this.fileExtension)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.folder, _this.folder) || other.folder == _this.folder)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.artUri, _this.artUri) || other.artUri == _this.artUri)&&(identical(other.durationMs, _this.durationMs) || other.durationMs == _this.durationMs)&&(identical(other.lastPlayedAt, _this.lastPlayedAt) || other.lastPlayedAt == _this.lastPlayedAt));
 }
 
 
 @override
 int get hashCode {
   final _this = this as Track;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.artist,_this.source,_this.album,_this.trackNumber,_this.fileExtension,_this.artUri,_this.durationMs,_this.lastPlayedAt);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.artist,_this.source,_this.album,_this.trackNumber,_this.fileExtension,_this.sizeBytes,_this.folder,_this.fileName,_this.artUri,_this.durationMs,_this.lastPlayedAt);
 }
 
 @override
 String toString() {
   final _this = this as Track;
-  return 'Track(id: ${_this.id}, title: ${_this.title}, artist: ${_this.artist}, source: ${_this.source}, album: ${_this.album}, trackNumber: ${_this.trackNumber}, fileExtension: ${_this.fileExtension}, artUri: ${_this.artUri}, durationMs: ${_this.durationMs}, lastPlayedAt: ${_this.lastPlayedAt})';
+  return 'Track(id: ${_this.id}, title: ${_this.title}, artist: ${_this.artist}, source: ${_this.source}, album: ${_this.album}, trackNumber: ${_this.trackNumber}, fileExtension: ${_this.fileExtension}, sizeBytes: ${_this.sizeBytes}, folder: ${_this.folder}, fileName: ${_this.fileName}, artUri: ${_this.artUri}, durationMs: ${_this.durationMs}, lastPlayedAt: ${_this.lastPlayedAt})';
 }
 
 
@@ -64,7 +71,7 @@ abstract mixin class $TrackCopyWith<$Res>  {
   factory $TrackCopyWith(Track value, $Res Function(Track) _then) = _$TrackCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String artist, TrackSource source, String? album, int? trackNumber, String? fileExtension, String? artUri, int? durationMs, DateTime? lastPlayedAt
+ String id, String title, String artist, TrackSource source, String? album, int? trackNumber, String? fileExtension, int? sizeBytes, String? folder, String? fileName, String? artUri, int? durationMs, DateTime? lastPlayedAt
 });
 
 
@@ -81,7 +88,7 @@ class _$TrackCopyWithImpl<$Res>
 
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artist = null,Object? source = null,Object? album = freezed,Object? trackNumber = freezed,Object? fileExtension = freezed,Object? artUri = freezed,Object? durationMs = freezed,Object? lastPlayedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? artist = null,Object? source = null,Object? album = freezed,Object? trackNumber = freezed,Object? fileExtension = freezed,Object? sizeBytes = freezed,Object? folder = freezed,Object? fileName = freezed,Object? artUri = freezed,Object? durationMs = freezed,Object? lastPlayedAt = freezed,}) {
   return _then(Track(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -90,6 +97,9 @@ as String,source: null == source ? _self.source : source // ignore: cast_nullabl
 as TrackSource,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
 as int?,fileExtension: freezed == fileExtension ? _self.fileExtension : fileExtension // ignore: cast_nullable_to_non_nullable
+as String?,sizeBytes: freezed == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int?,folder: freezed == folder ? _self.folder : folder // ignore: cast_nullable_to_non_nullable
+as String?,fileName: freezed == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String?,artUri: freezed == artUri ? _self.artUri : artUri // ignore: cast_nullable_to_non_nullable
 as String?,durationMs: freezed == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int?,lastPlayedAt: freezed == lastPlayedAt ? _self.lastPlayedAt : lastPlayedAt // ignore: cast_nullable_to_non_nullable
@@ -187,10 +197,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  int? sizeBytes,  String? folder,  String? fileName,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Track() when $default != null:
-return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
+return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.sizeBytes,_that.folder,_that.fileName,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
   return orElse();
 
 }
@@ -208,10 +218,10 @@ return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  int? sizeBytes,  String? folder,  String? fileName,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Track():
-return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
+return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.sizeBytes,_that.folder,_that.fileName,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -228,10 +238,10 @@ return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String artist,  TrackSource source,  String? album,  int? trackNumber,  String? fileExtension,  int? sizeBytes,  String? folder,  String? fileName,  String? artUri,  int? durationMs,  DateTime? lastPlayedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Track() when $default != null:
-return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
+return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that.trackNumber,_that.fileExtension,_that.sizeBytes,_that.folder,_that.fileName,_that.artUri,_that.durationMs,_that.lastPlayedAt);case _:
   return null;
 
 }
@@ -243,7 +253,7 @@ return $default(_that.id,_that.title,_that.artist,_that.source,_that.album,_that
 
 
 class _Track extends Track {
-  const _Track({required this.id, required this.title, required this.artist, required this.source, this.album, this.trackNumber, this.fileExtension, this.artUri, this.durationMs, this.lastPlayedAt}): super._();
+  const _Track({required this.id, required this.title, required this.artist, required this.source, this.album, this.trackNumber, this.fileExtension, this.sizeBytes, this.folder, this.fileName, this.artUri, this.durationMs, this.lastPlayedAt}): super._();
   
 
 /// Identifier unik aplikasi (UUID v4).
@@ -263,6 +273,16 @@ class _Track extends Track {
 /// Dipakai menampilkan codec pada info lagu (task 3.1). Nilai ini
 /// diambil dari MediaStore, bukan nama berkas.
 @override final  String? fileExtension;
+/// Ukuran berkas audio dalam byte (task 3.5). `null` bila MediaStore
+/// tidak menyediakannya. Dipakai di sheet info lagu.
+@override final  int? sizeBytes;
+/// Path induk berkas audio (mis. `/storage/emulated/0/Music/Rilis`).
+/// `null` bila path asli tidak tersedia (Android 13+ sering menyembunyikan
+/// kolom `DATA` MediaStore). Dipakai fitur "Buka folder" (task 3.5).
+@override final  String? folder;
+/// Nama berkas audio beserta ekstensi (mis. `lagu.mp3`). `null` bila
+/// path asli tidak tersedia.
+@override final  String? fileName;
 /// URI sampul album (content:// dari MediaStore). `null` bila tak ada.
 @override final  String? artUri;
 /// Durasi dalam milidetik.
@@ -280,18 +300,18 @@ _$TrackCopyWith<_Track> get copyWith => __$TrackCopyWithImpl<_Track>(this, _$ide
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Track&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.source, source) || other.source == source)&&(identical(other.album, album) || other.album == album)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.fileExtension, fileExtension) || other.fileExtension == fileExtension)&&(identical(other.artUri, artUri) || other.artUri == artUri)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.lastPlayedAt, lastPlayedAt) || other.lastPlayedAt == lastPlayedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Track&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.artist, artist) || other.artist == artist)&&(identical(other.source, source) || other.source == source)&&(identical(other.album, album) || other.album == album)&&(identical(other.trackNumber, trackNumber) || other.trackNumber == trackNumber)&&(identical(other.fileExtension, fileExtension) || other.fileExtension == fileExtension)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.folder, folder) || other.folder == folder)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.artUri, artUri) || other.artUri == artUri)&&(identical(other.durationMs, durationMs) || other.durationMs == durationMs)&&(identical(other.lastPlayedAt, lastPlayedAt) || other.lastPlayedAt == lastPlayedAt));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,artist,source,album,trackNumber,fileExtension,artUri,durationMs,lastPlayedAt);
+    return Object.hash(runtimeType,id,title,artist,source,album,trackNumber,fileExtension,sizeBytes,folder,fileName,artUri,durationMs,lastPlayedAt);
 }
 
 @override
 String toString() {
-    return 'Track(id: $id, title: $title, artist: $artist, source: $source, album: $album, trackNumber: $trackNumber, fileExtension: $fileExtension, artUri: $artUri, durationMs: $durationMs, lastPlayedAt: $lastPlayedAt)';
+    return 'Track(id: $id, title: $title, artist: $artist, source: $source, album: $album, trackNumber: $trackNumber, fileExtension: $fileExtension, sizeBytes: $sizeBytes, folder: $folder, fileName: $fileName, artUri: $artUri, durationMs: $durationMs, lastPlayedAt: $lastPlayedAt)';
 }
 
 
@@ -302,7 +322,7 @@ abstract mixin class _$TrackCopyWith<$Res> implements $TrackCopyWith<$Res> {
   factory _$TrackCopyWith(_Track value, $Res Function(_Track) _then) = __$TrackCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String artist, TrackSource source, String? album, int? trackNumber, String? fileExtension, String? artUri, int? durationMs, DateTime? lastPlayedAt
+ String id, String title, String artist, TrackSource source, String? album, int? trackNumber, String? fileExtension, int? sizeBytes, String? folder, String? fileName, String? artUri, int? durationMs, DateTime? lastPlayedAt
 });
 
 
@@ -319,7 +339,7 @@ class __$TrackCopyWithImpl<$Res>
 
 /// Create a copy of Track
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artist = null,Object? source = null,Object? album = freezed,Object? trackNumber = freezed,Object? fileExtension = freezed,Object? artUri = freezed,Object? durationMs = freezed,Object? lastPlayedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? artist = null,Object? source = null,Object? album = freezed,Object? trackNumber = freezed,Object? fileExtension = freezed,Object? sizeBytes = freezed,Object? folder = freezed,Object? fileName = freezed,Object? artUri = freezed,Object? durationMs = freezed,Object? lastPlayedAt = freezed,}) {
   return _then(_Track(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -328,6 +348,9 @@ as String,source: null == source ? _self.source : source // ignore: cast_nullabl
 as TrackSource,album: freezed == album ? _self.album : album // ignore: cast_nullable_to_non_nullable
 as String?,trackNumber: freezed == trackNumber ? _self.trackNumber : trackNumber // ignore: cast_nullable_to_non_nullable
 as int?,fileExtension: freezed == fileExtension ? _self.fileExtension : fileExtension // ignore: cast_nullable_to_non_nullable
+as String?,sizeBytes: freezed == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int?,folder: freezed == folder ? _self.folder : folder // ignore: cast_nullable_to_non_nullable
+as String?,fileName: freezed == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String?,artUri: freezed == artUri ? _self.artUri : artUri // ignore: cast_nullable_to_non_nullable
 as String?,durationMs: freezed == durationMs ? _self.durationMs : durationMs // ignore: cast_nullable_to_non_nullable
 as int?,lastPlayedAt: freezed == lastPlayedAt ? _self.lastPlayedAt : lastPlayedAt // ignore: cast_nullable_to_non_nullable

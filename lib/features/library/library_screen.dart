@@ -1,10 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/core/errors/failures.dart';
-import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/domain/entities/playlist.dart';
 import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/library/album_detail_screen.dart';
@@ -12,12 +9,10 @@ import 'package:lirih/features/library/artist_detail_screen.dart';
 import 'package:lirih/features/library/group_card.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
 import 'package:lirih/features/library/sort_mode.dart';
-import 'package:lirih/features/player/player_controller.dart';
-import 'package:lirih/features/playlists/add_to_playlist_sheet.dart';
 import 'package:lirih/features/playlists/playlist_detail_screen.dart';
 import 'package:lirih/features/playlists/playlist_form_sheet.dart';
 import 'package:lirih/features/playlists/playlists_controller.dart';
-import 'package:lirih/shared/widgets/track_artwork.dart';
+import 'package:lirih/shared/widgets/track_row.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Layar Pustaka — daftar lagu di perangkat pengguna (task 2.5).
@@ -39,7 +34,7 @@ class LibraryScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.soga800,
         foregroundColor: AppColors.soga50,
-        title: const Text('Pustaka'),
+        title: const Text('Library'),
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -82,15 +77,6 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
   int _section = 0;
 
   SortMode _sort = SortMode.title;
-
-  /// Memutar [first] dalam konteks antrean [queue].
-  void _play(Track first, List<Track> queue) {
-    unawaited(
-      ref
-          .read(playerControllerProvider.notifier)
-          .playTrack(first, queue: queue),
-    );
-  }
 
   /// Membandingkan dua label secara *case-insensitive* (urutan abjad).
   int _byLabel(String a, String b) =>
@@ -183,12 +169,7 @@ class _LibraryContentState extends ConsumerState<_LibraryContent> {
             separatorBuilder: (_, _) =>
                 const Divider(color: AppColors.soga700, height: 1),
             itemBuilder: (context, index) {
-              final track = sorted[index];
-              return _TrackRow(
-                track: track,
-                onTap: () => _play(track, sorted),
-                onLongPress: () => showAddToPlaylistSheet(context, track),
-              );
+              return TrackRow(track: sorted[index], queue: sorted);
             },
           ),
         ];
@@ -572,46 +553,6 @@ class _EmptyHint extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(color: AppColors.soga300, fontSize: 15),
         ),
-      ),
-    );
-  }
-}
-
-/// Satu baris trek: judul, artis, durasi.
-class _TrackRow extends StatelessWidget {
-  const _TrackRow({required this.track, required this.onTap, this.onLongPress});
-
-  final Track track;
-
-  final VoidCallback onTap;
-
-  final VoidCallback? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      leading: TrackArtwork(track: track),
-      title: Text(
-        track.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: AppColors.soga50,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: Text(
-        track.artist,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: AppColors.soga300, fontSize: 13),
-      ),
-      trailing: Text(
-        formatTrackDuration(track.durationMs),
-        style: const TextStyle(color: AppColors.soga400, fontSize: 13),
       ),
     );
   }

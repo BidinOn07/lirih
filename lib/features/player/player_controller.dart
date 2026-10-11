@@ -226,6 +226,75 @@ class PlayerController extends _$PlayerController {
     await playTrack(queue[index], queue: queue);
   }
 
+  /// Memutar [track] selanjutnya — menyisipkannya tepat setelah trek
+  /// aktif pada antrean saat ini (task 3.5). Bila tidak ada trek aktif,
+  /// trek langsung diputar.
+  Future<void> playNext(Track track) async {
+    final queue = List<Track>.of(state.queue);
+    if (queue.isEmpty || state.currentIndex < 0) {
+      await playTrack(track);
+      return;
+    }
+
+    // Lewati bila trek sudah tepat setelah trek aktif.
+    final insertAt = state.currentIndex + 1;
+    if (insertAt < queue.length && queue[insertAt].id == track.id) return;
+
+    queue.insert(insertAt, track);
+    state = state.copyWith(queue: queue);
+    unawaited(_persist(state));
+  }
+
+  /// Menambahkan [track] ke akhir antrean (task 3.5). Bila antrean kosong,
+  /// trek langsung diputar. Trek duplikat diabaikan.
+  Future<void> addToQueue(Track track) async {
+    final queue = List<Track>.of(state.queue);
+    if (queue.isEmpty) {
+      await playTrack(track);
+      return;
+    }
+    if (queue.any((item) => item.id == track.id)) return;
+
+    queue.add(track);
+    state = state.copyWith(queue: queue);
+    unawaited(_persist(state));
+  }
+
+  /// Memutar [tracks] dalam urutan acak (task 3.5).
+  ///
+  /// Mengocok salinan antrean lalu memutar trek pertamanya — trek yang
+  /// sama tidak akan terpilih dua kali berturut-turut selama mode acak
+  /// aktif (lihat [_skipBy]).
+  Future<void> playShuffled(List<Track> tracks) async {
+    if (tracks.isEmpty) return;
+
+    final shuffled = List<Track>.of(tracks)..shuffle(_random);
+    state = state.copyWith(isShuffling: true);
+    unawaited(_persist(state));
+    await playTrack(shuffled.first, queue: shuffled);
+  }
+
+  /// Memutar trek terakhir yang dimainkan dalam [tracks] (task 3.5).
+  ///
+  /// Mencari trek [tracks] paling baru yang tercatat di riwayat pemutaran
+  /// (lihat [RecentPlaysController]) dan memutarnya. Bila **tidak ada**
+  /// trek [tracks] yang pernah diputar, memutar trek pertama secara
+  /// berurutan seperti [playTrack] biasa — sesuai permintaan: "berlaku ke
+  /// seluruh playlist jika lagunya ada yang diputar terakhir, tetapi jika
+  /// tidak ada lagu yang diputar terakhir di playlist tersebut, maka play
+  /// berurutan seperti biasa".
+  Future<void> playLastPlayed(List<Track> tracks) async {
+    if (tracks.isEmpty) return;
+
+    final recents = ref.read(recentPlaysControllerProvider);
+    final trackIds = tracks.map((track) => track.id).toSet();
+
+    final lastPlayed = recents
+        .where((track) => trackIds.contains(track.id))
+        .firstOrNull;
+    await playTrack(lastPlayed ?? tracks.first, queue: tracks);
+  }
+
   /// Mengatur ulang antrean via drag (task 2.9).
   ///
   /// Memakai konvensi `ReorderableListView.onReorderItem`: [newIndex] sudah

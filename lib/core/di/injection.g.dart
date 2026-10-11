@@ -114,4 +114,4 @@ final class MusicLibraryRepositoryProvider
 }
 
 String _$musicLibraryRepositoryHash() =>
-    r'80365898c548337a8ae2fa3bc23f61bac86010f5';
+    r'908b13ca03f32b2bdd9fd589769ef8f672b6871d';
