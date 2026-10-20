@@ -93,7 +93,7 @@ final class TrackTagsControllerProvider
 }
 
 String _$trackTagsControllerHash() =>
-    r'39e464d308b9d15043c38c5ae18d6a387b520f59';
+    r'62c8b322a264b2c95da31502d4b030b23d97eaab';
 
 /// Perubahan tag yang ditulis pengguna via sheet "Edit info lagu"
 /// (task 3.5).

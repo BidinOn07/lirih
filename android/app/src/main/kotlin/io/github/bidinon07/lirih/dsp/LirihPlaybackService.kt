@@ -7,7 +7,9 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
-import androidx.media3.session.DefaultMediaNotificationProvider
+import android.os.Bundle
+import androidx.media3.common.Player
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import io.github.bidinon07.lirih.MainActivity
@@ -79,18 +81,82 @@ class LirihPlaybackService : MediaSessionService() {
 
         val session = MediaSession.Builder(this, player.sessionPlayer())
             .setSessionActivity(pendingIntent)
+            .setCustomLayout(buildCustomLayout())
+            .setCallback(object : MediaSession.Callback {
+                override fun onConnect(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                ): MediaSession.ConnectionResult {
+                    // Daftarkan aksi kustom agar tombolnya dapat ditekan.
+                    val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
+                        .buildUpon()
+                    for (command in NotificationActions.allActions) {
+                        commands.add(command)
+                    }
+                    return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                        .setAvailableSessionCommands(commands.build())
+                        // Beberkan command transport yang **berfungsi** di
+                        // pemutar satu-trek kita: play/pause (mengisi slot
+                        // tengah standar notifikasi) & seek (progress bar).
+                        //
+                        // Tetap JANGAN beberkan seek prev/next, repeat, shuffle
+                        // — player hanya memegang satu MediaItem (antrean di
+                        // Dart), jadi tombol standarnya tidak berfungsi dan
+                        // MIUI/HyperOS merendernya dobel dengan tombol kustom.
+                        //
+                        // JANGAN pakai Player.Commands.EMPTY di sini: tanpa aksi
+                        // transport, PlaybackState.actions jadi minim dan sistem
+                        // tak menganggap session ini "active media session" →
+                        // mediaPlayback FGS kehilangan exemption & dibunuh
+                        // setelah ~17 menit app idle (notifikasi hilang).
+                        .setAvailablePlayerCommands(notificationPlayerCommands())
+                        .setCustomLayout(buildCustomLayout())
+                        .build()
+                }
+
+                override fun onCustomCommand(
+                    session: MediaSession,
+                    controller: MediaSession.ControllerInfo,
+                    customCommand: androidx.media3.session.SessionCommand,
+                    args: Bundle,
+                ): com.google.common.util.concurrent.ListenableFuture<
+                    androidx.media3.session.SessionResult,
+                > {
+                    val action = customCommand.customAction
+                    if (action != null) {
+                        NotificationActions.onAction?.invoke(action)
+                    }
+                    return com.google.common.util.concurrent.Futures.immediateFuture(
+                        androidx.media3.session.SessionResult(
+                            androidx.media3.session.SessionResult.RESULT_SUCCESS,
+                        ),
+                    )
+                }
+            })
             .build()
         mediaSession = session
+
+        // Tombol tombol mengandalkan state pemutar — dengarkan perubahan
+        // agar ikon (play/pause, repeat) tetap sinkron.
+        player.sessionPlayer().addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                refreshLayout()
+            }
+        })
+
+        // Saat Dart mendorong state tombol (shuffle/repeat/favorit), bangun
+        // ulang custom layout agar ikon notifikasi segar (task 3.5).
+        NotificationActions.onStateChanged = { refreshLayout() }
 
         // Provider WAJIB dipasang SEBELUM addSession agar
         // MediaNotificationManager dibuat dengan ID/channel yang sama dengan
         // notifikasi sementara — jika tidak, media3 memakai default (1001 /
         // "default_channel_id") dan notifikasi ganda muncul.
+        //
+        // Memakai [LirihMediaNotificationProvider] (bukan default) agar
+        // urutan tombol kustom dihormati — lihat kdoc kelas tersebut.
         setMediaNotificationProvider(
-            DefaultMediaNotificationProvider.Builder(this)
-                .setNotificationId(NOTIFICATION_ID)
-                .setChannelId(CHANNEL_ID)
-                .build(),
+            LirihMediaNotificationProvider.create(this, NOTIFICATION_ID, CHANNEL_ID),
         )
 
         // Memenuhi deadline foreground service seketika (lihat kdoc kelas).
@@ -106,7 +172,49 @@ class LirihPlaybackService : MediaSessionService() {
         controllerInfo: MediaSession.ControllerInfo,
     ): MediaSession? = mediaSession
 
+    // ── Tombol kustom notifikasi (task 3.5) ─────────────────────────────
+
+    /**
+     * Membangun baris tombol kustom notifikasi — didelegasikan ke
+     * [NotificationActions.buildNotificationButtons] agar urutan, ikon, dan
+     * penyaringan tombol putar/jeda (slot tengah standar di Android 13+)
+     * konsisten dengan [LirihMediaNotificationProvider].
+     */
+    private fun buildCustomLayout(): List<CommandButton> =
+        NotificationActions.buildNotificationButtons(this)
+
+    /**
+     * Command player yang dibebarkan ke controller (notif/lockscreen).
+     *
+     * Hanya transport yang benar-benar berfungsi pada pemutar satu-trek:
+     * [Player.COMMAND_PLAY_PAUSE] mengisi slot tengah standar notifikasi,
+     * [Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM] menggambar progress bar.
+     * Command seek prev/next, repeat, shuffle sengaja dikecualikan — lihat
+     * kdoc [onConnect].
+     */
+    private fun notificationPlayerCommands(): Player.Commands =
+        Player.Commands.Builder()
+            .add(Player.COMMAND_PLAY_PAUSE)
+            .add(Player.COMMAND_PREPARE)
+            .add(Player.COMMAND_STOP)
+            .add(Player.COMMAND_SEEK_TO_DEFAULT_POSITION)
+            .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+            .build()
+
+    /**
+     * Memperbarui baris tombol notifikasi setelah state pemutar berubah
+     * (mis. play → pause) — membangun ulang custom layout session.
+     */
+    private fun refreshLayout() {
+        val player = PlaybackHost.player
+        NotificationActions.state = NotificationActions.state.copy(
+            isPlaying = player?.sessionPlayer()?.isPlaying == true,
+        )
+        mediaSession?.setCustomLayout(buildCustomLayout())
+    }
+
     override fun onDestroy() {
+        NotificationActions.onStateChanged = null
         mediaSession?.release()
         mediaSession = null
         super.onDestroy()

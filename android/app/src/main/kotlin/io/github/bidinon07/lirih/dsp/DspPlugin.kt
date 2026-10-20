@@ -63,6 +63,10 @@ class DspPlugin(
         player.onEvent = { event, data ->
             ch.invokeMethod("onEvent", mapOf("event" to event, "data" to data))
         }
+        // Teruskan aksi tombol notifikasi ke Dart (task 3.5).
+        NotificationActions.onAction = { action ->
+            ch.invokeMethod("onNotificationAction", mapOf("action" to action))
+        }
         // Player dipublikasikan agar LirihPlaybackService dapat membangun
         // MediaSession di sekitar instance yang sama (task 1.7).
         PlaybackHost.player = player
@@ -72,6 +76,7 @@ class DspPlugin(
     fun detach() {
         stopPlaybackService()
         player.onEvent = null
+        NotificationActions.onAction = null
         channel?.setMethodCallHandler(null)
         channel = null
         player.release()
@@ -175,6 +180,22 @@ class DspPlugin(
                 }
                 "setPitch" -> {
                     player.setPitch(toFraction(call.argument<Number>("ratio")))
+                    result.success(null)
+                }
+                "setNotificationState" -> {
+                    // State tombol notifikasi (task 3.5) — disimpan di
+                    // NotificationActions, dibaca provider saat membangun
+                    // ulang baris tombol notifikasi.
+                    val map = call.argument<Map<String, Any?>>("state")!!
+                    NotificationActions.state = NotificationActions.NotificationState(
+                        isPlaying = map["isPlaying"] as? Boolean ?: false,
+                        isShuffling = map["isShuffling"] as? Boolean ?: false,
+                        repeatMode = (map["repeatMode"] as? Number)?.toInt() ?: 0,
+                        isFavorite = map["isFavorite"] as? Boolean ?: false,
+                    )
+                    // Memicu rebuild notifikasi agar ikon (play/pause, repeat,
+                    // favorit) segar — service memanggil setCustomLayout().
+                    NotificationActions.onStateChanged?.invoke()
                     result.success(null)
                 }
                 "setTempo" -> {

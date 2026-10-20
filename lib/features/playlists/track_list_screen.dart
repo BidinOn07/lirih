@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
 import 'package:lirih/domain/entities/track.dart';
-import 'package:lirih/features/player/mini_player.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/features/shell/main_bottom_bar.dart';
 import 'package:lirih/shared/widgets/track_row.dart';
 
 /// Layar daftar trek generik untuk *playlist otomatis* seperti "Putar
@@ -43,7 +43,7 @@ class TrackListScreen extends ConsumerWidget {
       ),
       // Mini player hidup di MainShell, tetapi layar ini di-push sebagai
       // route penuh yang menutupinya — pasang ulang di sini (task 3.5).
-      bottomNavigationBar: const MiniPlayerBottomBar(),
+      bottomNavigationBar: const MainBottomBar(),
       body: tracks.isEmpty
           ? _EmptyList(icon: icon, title: title)
           : ListView(

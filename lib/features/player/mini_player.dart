@@ -2,23 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
+import 'package:lirih/core/constants/app_motion.dart';
+import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/favorites/favorites_controller.dart';
 import 'package:lirih/features/player/player_controller.dart';
 import 'package:lirih/features/player/player_screen.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
-import 'package:lirih/features/player/track_info_sheet.dart';
+import 'package:lirih/shared/widgets/switching_icon.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
 
 /// Bar pemutar ringkas yang muncul di atas navigasi bawah (task 2.7).
 ///
-/// Bar ini **hanya tampil saat ada trek aktif** — muncul otomatis begitu
-/// pengguna memutar lagu dari tab mana pun, dan hilang saat antrean
-/// dikosongkan. Menekan bar (di luar tombol aksi) membuka layar Pemutar
-/// penuh; tombol aksi memberi kontrol cepat tanpa berpindah layar:
-/// acak, sebelumnya, putar/jeda, berikutnya, mode pengulangan, dan info
-/// lagu (tombol opsi).
+/// Menekan bar (di luar tombol aksi) membuka layar Pemutar penuh; tombol
+/// aksi memberi kontrol cepat tanpa berpindah layar: favorit, acak,
+/// sebelumnya, putar/jeda, berikutnya, dan mode pengulangan.
+///
+/// [track] disuplai oleh pemanggil (lihat [MiniPlayerBottomBar]) — bukan
+/// dibaca sendiri dari provider — sehingga saat trek terakhir dihapus,
+/// bar yang sedang memudar keluar tetap menampilkan lagunya sampai
+/// animasi selesai, bukan mendadak kosong.
 class MiniPlayerBar extends ConsumerWidget {
-  /// Membuat bar [MiniPlayerBar].
-  const MiniPlayerBar({required this.onOpenPlayer, super.key});
+  /// Membuat bar [MiniPlayerBar] untuk [track].
+  const MiniPlayerBar({
+    required this.track,
+    required this.onOpenPlayer,
+    super.key,
+  });
+
+  /// Trek yang ditampilkan.
+  final Track track;
 
   /// Dipanggil saat bar ditekan (membuka layar Pemutar penuh).
   final VoidCallback onOpenPlayer;
@@ -26,47 +38,70 @@ class MiniPlayerBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final player = ref.watch(playerControllerProvider);
-    final track = player.currentTrack;
-    if (track == null) return const SizedBox.shrink();
-
     final notifier = ref.read(playerControllerProvider.notifier);
+    final favorites = ref.watch(favoritesControllerProvider);
+    final isFavorite = favorites.any((item) => item.id == track.id);
 
     return Material(
       color: AppColors.soga800,
       child: InkWell(
         onTap: onOpenPlayer,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 4, 8),
+          padding: const EdgeInsets.fromLTRB(10, 12, 6, 12),
           child: Row(
             children: [
-              TrackArtwork(track: track, size: 52),
-              const SizedBox(width: 10),
+              // Silang-pudar sampul + judul saat lagu berganti.
               Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      track.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.soga50,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                child: AnimatedSwitcher(
+                  duration: AppMotion.fast,
+                  switchInCurve: AppMotion.easeOut,
+                  switchOutCurve: AppMotion.easeIn,
+                  child: Row(
+                    key: ValueKey(track.id),
+                    children: [
+                      TrackArtwork(track: track, size: 56),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              track.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.soga50,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              track.artist,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.soga300,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Text(
-                      track.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.soga300,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              ),
+              _MiniIconButton(
+                icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                iconSize: 18,
+                active: isFavorite,
+                tooltip: isFavorite
+                    ? 'Hapus dari favorit'
+                    : 'Tambah ke favorit',
+                onPressed: () => ref
+                    .read(favoritesControllerProvider.notifier)
+                    .toggle(track),
               ),
               _MiniIconButton(
                 icon: Icons.shuffle,
@@ -108,12 +143,6 @@ class MiniPlayerBar extends ConsumerWidget {
                     ? 'Ulang: semua trek'
                     : 'Ulang: satu trek',
                 onPressed: notifier.toggleRepeat,
-              ),
-              _MiniIconButton(
-                icon: Icons.more_vert,
-                iconSize: 18,
-                tooltip: 'Info lagu',
-                onPressed: () => showTrackInfoSheet(context, track),
               ),
             ],
           ),
@@ -163,7 +192,10 @@ class _MiniIconButton extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
-      icon: Icon(icon, color: color),
+      // [SwitchingIcon] memudar + mengecil saat ikon bertukar (putar/jeda,
+      // favorit, ulang-satu). Ikon yang tidak berubah tetap sama tanpa
+      // memicu animasi ulang.
+      icon: SwitchingIcon(icon: icon, color: color, size: iconSize),
       iconSize: iconSize,
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,
@@ -180,15 +212,58 @@ class _MiniIconButton extends StatelessWidget {
 /// Tanpa widget ini, mini player tidak muncul di layar tersebut walau ada
 /// trek aktif. Widget ini membuka layar Pemutar sendiri lewat Navigator,
 /// sehingga mini player tetap sinkron di mana pun trek dimainkan.
-class MiniPlayerBottomBar extends StatelessWidget {
+///
+/// Mengawasi [PlayerController] sendiri: seluruh widget (termasuk garis
+/// pemisah [DecoratedBox]) ikut hilang saat tidak ada trek aktif —
+/// bila hanya isinya yang disembunyikan, `DecoratedBox` yang ditinggalkan
+/// tetap menggambar border tipis di bagian bawah layar.
+///
+/// **Animasi:** bar naik dari balik [NavigationBar] saat trek mulai diputar
+/// ([SizeTransition] memotong tinggi dari sisi atas + [FadeTransition]),
+/// dan menyusut kembali saat antrean dikosongkan. Kunci yang berbeda
+/// antara "ada bar" dan "kosong" membuat [AnimatedSwitcher] benar-benar
+/// memulai animasi; rebuild biasa (posisi pemutar tiap tick) memakai kunci
+/// yang sama sehingga animasi tidak diulang. Bar yang sedang memudar keluar
+/// disimpan [AnimatedSwitcher] apa adanya, sehingga ia tetap menampilkan
+/// trek terakhir sampai animasi selesai.
+class MiniPlayerBottomBar extends ConsumerWidget {
   /// Membuat bar untuk dipasang di `bottomNavigationBar`.
   const MiniPlayerBottomBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MiniPlayerBar(
-      onOpenPlayer: () => Navigator.of(context)
-          .push(MaterialPageRoute<void>(builder: (_) => const PlayerScreen())),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final track = ref.watch(
+      playerControllerProvider.select((state) => state.currentTrack),
+    );
+
+    return AnimatedSwitcher(
+      duration: AppMotion.medium,
+      switchInCurve: AppMotion.easeOut,
+      switchOutCurve: AppMotion.easeIn,
+      transitionBuilder: (child, animation) => SizeTransition(
+        sizeFactor: animation,
+        // Sisi bawah menempel di puncak NavigationBar, sisi atas naik —
+        // bar terasa "keluar" dari balik navigasi, bukan menjorok ke bawah.
+        alignment: Alignment.topLeft,
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+      child: track != null
+          ? DecoratedBox(
+              key: const ValueKey('mini-player'),
+              // Beri garis pemisah tipis agar mini player tidak menyatu
+              // dengan konten detail di atasnya.
+              decoration: const BoxDecoration(
+                color: AppColors.soga800,
+                border: Border(
+                  top: BorderSide(color: AppColors.soga700, width: 0.5),
+                ),
+              ),
+              child: MiniPlayerBar(
+                track: track,
+                onOpenPlayer: () => openPlayerScreen(context),
+              ),
+            )
+          : const SizedBox.shrink(key: ValueKey('mini-player-empty')),
     );
   }
 }

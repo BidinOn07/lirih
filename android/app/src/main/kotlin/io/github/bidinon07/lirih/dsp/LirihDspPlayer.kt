@@ -34,7 +34,10 @@ class LirihDspPlayer(private val context: Context) {
 
     /**
      * Callback event ke Dart: `("completed", null)` saat playback selesai,
-     * `("error", pesan)` saat terjadi kegagalan.
+     * `("error", pesan)` saat terjadi kegagalan, dan
+     * `("playingStateChanged", "true"/"false")` saat status putar berubah
+     * (termasuk saat dijeda/dilanjutkan dari kontrol media standar notifikasi
+     * atau akibat audio focus — yang tidak melalui Dart).
      */
     var onEvent: ((event: String, extra: String?) -> Unit)? = null
 
@@ -52,6 +55,14 @@ class LirihDspPlayer(private val context: Context) {
                     if (playbackState == Player.STATE_ENDED) {
                         onEvent?.invoke("completed", null)
                     }
+                }
+
+                // Dorong perubahan status putar ke Dart. Tanpa ini, jeda yang
+                // dipicu dari tombol standar notifikasi (slot tengah) atau
+                // audio focus tidak terlihat di mini player (ikon play/pause
+                // mini player menjadi tidak sinkron).
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    onEvent?.invoke("playingStateChanged", isPlaying.toString())
                 }
 
                 override fun onPlayerError(error: PlaybackException) {

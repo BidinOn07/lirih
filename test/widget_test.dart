@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lirih/app.dart';
 import 'package:lirih/features/home/home_screen.dart';
+import 'package:lirih/features/library/library_screen.dart';
+import 'package:lirih/features/search/search_screen.dart';
 
 void main() {
   group('LirihApp', () {
@@ -25,10 +27,21 @@ void main() {
 
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(NavigationDestination), findsNWidgets(3));
-      expect(find.text('Search'), findsOneWidget);
+      // Label tab di NavigationBar. (Judul AppBar SearchScreen juga
+      // berbunyi 'Search', jadi batasi pencarian ke dalam NavigationBar.)
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Search'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Pemutar'), findsNothing);
       // Tab pertama (Beranda) adalah layar awal.
       expect(find.byType(HomeScreen), findsOneWidget);
+      // Ketiga tab tetap hidup di pohon widget agar state-nya terjaga.
+      expect(find.byType(SearchScreen), findsOneWidget);
+      expect(find.byType(LibraryScreen), findsOneWidget);
     });
   });
 }

@@ -8,6 +8,7 @@ import 'package:lirih/core/services/hive_service.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/data/mappers/track_mapper.dart';
 import 'package:lirih/domain/entities/track.dart';
+import 'package:lirih/features/favorites/favorites_controller.dart';
 import 'package:lirih/features/home/recent_plays_controller.dart';
 import 'package:lirih/features/player/player_state.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
@@ -50,6 +51,9 @@ class PlayerController extends _$PlayerController {
 
   StreamSubscription<DspEventPayload>? _eventSub;
 
+  /// Langganan aksi tombol kustom notifikasi media (task 3.5).
+  StreamSubscription<NotificationAction>? _notificationActionSub;
+
   /// Box Hive untuk persistensi antrean; `null` bila belum terbuka (inert).
   Box<dynamic>? _box;
 
@@ -65,12 +69,37 @@ class PlayerController extends _$PlayerController {
     // Play sendiri setelah aplikasi dibuka kembali.
     final restored = _restoreQueue(defaultHz);
     _eventSub = _dsp.events.listen(_onNativeEvent);
+    _notificationActionSub = _dsp.notificationActions.listen(
+      _onNotificationAction,
+    );
     ref.onDispose(() {
       unawaited(_eventSub?.cancel());
+      unawaited(_notificationActionSub?.cancel());
       _positionTimer?.cancel();
       unawaited(_dsp.stop());
     });
     return restored;
+  }
+
+  /// Mengirim state pemutar ke native agar ikon tombol kustom di notifikasi
+  /// media selalu sinkron (task 3.5).
+  ///
+  /// Membaca status favorit trek aktif dari [FavoritesController] lalu
+  /// memanggil [DspChannel.setNotificationState]. *Best effort* — galat
+  /// diabaikan agar tidak mengganggu playback.
+  void _pushNotificationState() {
+    final track = state.currentTrack;
+    final isFavorite =
+        track != null &&
+        ref.read(favoritesControllerProvider).any((t) => t.id == track.id);
+    unawaited(
+      _dsp.setNotificationState(
+        isPlaying: state.isPlaying,
+        isShuffling: state.isShuffling,
+        repeatMode: kLoopCycle.indexOf(state.repeatMode),
+        isFavorite: isFavorite,
+      ),
+    );
   }
 
   /// Menangani event dari mesin native.
@@ -81,7 +110,48 @@ class PlayerController extends _$PlayerController {
       case DspEvent.error:
         state = state.copyWith(isPlaying: false);
         _stopPositionTimer();
+      case DspEvent.playingStateChanged:
+        // Jeda/lanjut dari **kontrol media standar** notifikasi (slot tengah
+        // Android 13+) atau audio focus tidak melalui Dart — ikuti state
+        // native agar ikon mini player & polling posisi tetap sinkron.
+        final isPlaying = payload.data == 'true';
+        if (isPlaying) {
+          _startPositionTimer();
+        } else {
+          _stopPositionTimer();
+        }
+        state = state.copyWith(isPlaying: isPlaying);
     }
+  }
+
+  /// Menangani aksi tombol kustom dari notifikasi media (task 3.5).
+  ///
+  /// Aksi diteruskan dari `LirihPlaybackService` via `NotificationActions`.
+  /// Setiap aksi memperbarui state, dan perubahan tersebut otomatis
+  /// didorong kembali ke notifikasi lewat [_pushNotificationState] yang
+  /// dipantau oleh efek samping (lihat [build]).
+  Future<void> _onNotificationAction(NotificationAction action) async {
+    switch (action) {
+      case NotificationAction.togglePlay:
+        await togglePlay();
+      case NotificationAction.next:
+        await skipNext();
+      case NotificationAction.previous:
+        await skipPrevious();
+      case NotificationAction.mode:
+        await cyclePlayMode();
+      case NotificationAction.favorite:
+        await _toggleCurrentFavorite();
+    }
+  }
+
+  /// Menandai/menghapus trek aktif sebagai favorit (dipicu tombol
+  /// notifikasi — task 3.5).
+  Future<void> _toggleCurrentFavorite() async {
+    final track = state.currentTrack;
+    if (track == null) return;
+    await ref.read(favoritesControllerProvider.notifier).toggle(track);
+    _pushNotificationState();
   }
 
   /// Memutar [track] dalam konteks [queue] (default: trek tunggal).
@@ -108,6 +178,7 @@ class PlayerController extends _$PlayerController {
       artUri: track.artUri,
     );
     await _dsp.setPitch(pitchRatioForFrequency(state.frequencyHz));
+    _pushNotificationState();
     unawaited(
       ref.read(recentPlaysControllerProvider.notifier).recordPlay(track),
     );
@@ -126,6 +197,7 @@ class PlayerController extends _$PlayerController {
       _startPositionTimer();
       state = state.copyWith(isPlaying: true);
     }
+    _pushNotificationState();
   }
 
   /// Trek berikutnya (skip eksplisit selalu membungkus ke awal).
@@ -182,6 +254,7 @@ class PlayerController extends _$PlayerController {
   void toggleShuffle() {
     state = state.copyWith(isShuffling: !state.isShuffling);
     unawaited(_persist(state));
+    _pushNotificationState();
   }
 
   /// Melompat ke [position].
@@ -196,6 +269,40 @@ class PlayerController extends _$PlayerController {
     final next = kLoopCycle[(current + 1) % kLoopCycle.length];
     state = state.copyWith(repeatMode: next);
     unawaited(_persist(state));
+    _pushNotificationState();
+  }
+
+  /// Memutar **mode pemutaran gabungan** di notifikasi (task 3.5):
+  /// mati → ulang semua → ulang satu → acak → mati.
+  ///
+  /// Ulang & acak digabung dalam satu tombol "mode" agar semua fungsi muat
+  /// di batas 5 slot notifikasi Android 13+ (mini player tetap mengekspos
+  /// keduanya sebagai tombol terpisah). State tak-canonical — mis. ulang &
+  /// acak aktif bersamaan dari mini player — dinormalisasi oleh
+  /// [_playModeIndex] ke mode terdekat dalam siklus.
+  Future<void> cyclePlayMode() async {
+    final next = (_playModeIndex() + 1) % 4;
+    state = state.copyWith(
+      repeatMode: switch (next) {
+        1 => LoopMode.all,
+        2 => LoopMode.one,
+        _ => LoopMode.off,
+      },
+      isShuffling: next == 3,
+    );
+    unawaited(_persist(state));
+    _pushNotificationState();
+  }
+
+  /// Indeks mode gabungan: 0 = mati, 1 = ulang semua, 2 = ulang satu,
+  /// 3 = acak. Acak diutamakan saat kedua mode aktif bersamaan.
+  int _playModeIndex() {
+    if (state.isShuffling) return 3;
+    return switch (state.repeatMode) {
+      LoopMode.all => 1,
+      LoopMode.one => 2,
+      LoopMode.off => 0,
+    };
   }
 
   /// Mengatur frekuensi penalaan (diterapkan real-time ke mesin native).
@@ -212,6 +319,7 @@ class PlayerController extends _$PlayerController {
     await _dsp.stop();
     _stopPositionTimer();
     state = state.copyWith(isPlaying: false, positionMs: 0);
+    _pushNotificationState();
   }
 
   /// Menjeda playback bila sedang memutar (mis. sleep timer selesai).

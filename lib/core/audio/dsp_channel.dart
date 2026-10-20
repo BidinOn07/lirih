@@ -13,6 +13,44 @@ enum DspEvent {
 
   /// Kegagalan playback; lihat [DspEventPayload.data].
   error,
+
+  /// Status putar berubah (`"true"`/`"false"`); lihat [DspEventPayload.data].
+  ///
+  /// Dipicu mesin native saat jeda/lanjut dari **kontrol media standar**
+  /// notifikasi (slot tengah) atau akibat audio focus — kedua nya tidak
+  /// melalui Dart, sehingga Dart perlu diberi tahu agar mini player ikut
+  /// sinkron.
+  playingStateChanged,
+}
+
+/// Aksi tombol kustom di notifikasi media (task 3.5).
+enum NotificationAction {
+  /// Menandai/hapus trek aktif sebagai favorit.
+  favorite,
+
+  /// Trek sebelumnya.
+  previous,
+
+  /// Jeda/lanjutkan pemutaran.
+  togglePlay,
+
+  /// Trek berikutnya.
+  next,
+
+  /// Memutar mode pemutaran gabungan: mati → ulang semua → ulang satu →
+  /// acak → mati (ulang & acak digabung agar muat di 5 slot notifikasi).
+  mode;
+
+  /// Membuat [NotificationAction] dari nama aksi native; `null` bila tidak
+  /// dikenali (mis. aksi dari versi native lebih lama).
+  static NotificationAction? fromName(String? name) => switch (name) {
+    'io.github.bidinon07.lirih.action.FAVORITE' => favorite,
+    'io.github.bidinon07.lirih.action.PREVIOUS' => previous,
+    'io.github.bidinon07.lirih.action.TOGGLE_PLAY' => togglePlay,
+    'io.github.bidinon07.lirih.action.NEXT' => next,
+    'io.github.bidinon07.lirih.action.MODE' => mode,
+    _ => null,
+  };
 }
 
 /// Muatan event dari mesin native.
@@ -48,6 +86,9 @@ class DspChannel {
   static final StreamController<DspEventPayload> _events =
       StreamController<DspEventPayload>.broadcast();
 
+  static final StreamController<NotificationAction> _notificationActions =
+      StreamController<NotificationAction>.broadcast();
+
   static Completer<String?>? _pickCompleter;
 
   static bool _handlerInstalled = false;
@@ -56,6 +97,12 @@ class DspChannel {
   Stream<DspEventPayload> get events {
     _ensureHandler();
     return _events.stream;
+  }
+
+  /// Aliran aksi tombol kustom notifikasi (task 3.5).
+  Stream<NotificationAction> get notificationActions {
+    _ensureHandler();
+    return _notificationActions.stream;
   }
 
   /// Memasang dispatcher pesan sekali saja.
@@ -69,6 +116,7 @@ class DspChannel {
           final name = args?['event'] as String?;
           final event = switch (name) {
             'completed' => DspEvent.completed,
+            'playingStateChanged' => DspEvent.playingStateChanged,
             _ => DspEvent.error,
           };
           _events.add(
@@ -77,6 +125,11 @@ class DspChannel {
         case 'onFilePicked':
           _pickCompleter?.complete(args?['uri'] as String?);
           _pickCompleter = null;
+        case 'onNotificationAction':
+          final action = NotificationAction.fromName(
+            args?['action'] as String?,
+          );
+          if (action != null) _notificationActions.add(action);
       }
       return null;
     });
@@ -148,6 +201,25 @@ class DspChannel {
     'setTempo',
     <String, dynamic>{'ratio': ratio},
   );
+
+  /// Mengirim state pemutar ke native agar ikon tombol kustom di notifikasi
+  /// media selalu sinkron (task 3.5).
+  ///
+  /// Dipanggil setiap kali status pemutar, mode acak/pengulangan, atau
+  /// status favorit trek aktif berubah.
+  Future<void> setNotificationState({
+    required bool isPlaying,
+    required bool isShuffling,
+    required int repeatMode,
+    required bool isFavorite,
+  }) => _channel.invokeMethod<void>('setNotificationState', <String, dynamic>{
+    'state': <String, dynamic>{
+      'isPlaying': isPlaying,
+      'isShuffling': isShuffling,
+      'repeatMode': repeatMode,
+      'isFavorite': isFavorite,
+    },
+  });
 
   /// Rasio pitch aktif di mesin native.
   Future<double> getPitch() async =>

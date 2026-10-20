@@ -6,8 +6,8 @@ import 'package:lirih/domain/entities/track.dart';
 import 'package:lirih/features/library/album_detail_screen.dart';
 import 'package:lirih/features/library/group_card.dart';
 import 'package:lirih/features/library/library_scan_controller.dart';
-import 'package:lirih/features/player/mini_player.dart';
 import 'package:lirih/features/player/player_controller.dart';
+import 'package:lirih/features/shell/main_bottom_bar.dart';
 
 /// Label untuk trek tanpa tag album (agar tidak hilang dari grid).
 const String _noAlbumLabel = 'Tanpa album';
@@ -54,7 +54,7 @@ class ArtistDetailScreen extends ConsumerWidget {
       ),
       // Mini player hidup di MainShell, tetapi layar ini di-push sebagai
       // route penuh yang menutupinya — pasang ulang di sini (task 3.5).
-      bottomNavigationBar: const MiniPlayerBottomBar(),
+      bottomNavigationBar: const MainBottomBar(),
       body: tracks.isEmpty
           ? const Center(
               child: Text(

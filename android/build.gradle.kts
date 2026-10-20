@@ -110,6 +110,21 @@ subprojects {
                             ),
                             "ActivityCompat.shouldShowRequestPermissionRationale" +
                                 "(activity, permissions[0])",
+                        )
+                        // LIRIH-PATCHED-RESULT-GUARD: plugin memegang result
+                        // method channel sebagai WeakReference yang bisa
+                        // ter-garbage collected saat dialog izin masih
+                        // terbuka (MIUI/HyperOS). Saat dialog ditutup,
+                        // PluginProvider.result() melempar
+                        // UninitializedPluginProviderException di thread main
+                        // → FATAL EXCEPTION → app crash saat startup. Bungkus
+                        // akses result: bila hilang, kembalikan true (kami
+                        // menanganinya) agar Android tidak teruskan ke handler
+                        // lain. Sisi Dart memakai timeout agar tidak menggantung.
+                        .replace(
+                            "val result = PluginProvider.result()",
+                            "val result = try { PluginProvider.result() } " +
+                                "catch (e: Exception) { return true }",
                         ),
                 )
             }

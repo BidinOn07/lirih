@@ -112,8 +112,7 @@ void main() {
       verifyNever(() => scanner.querySongs());
     });
 
-    test('override tag pengguna diterapkan saat memindai (task 3.5)',
-        () async {
+    test('override tag pengguna diterapkan saat memindai (task 3.5)', () async {
       when(() => scanner.hasPermission()).thenAnswer((_) async => true);
       when(() => scanner.querySongs()).thenAnswer((_) async => [_song()]);
 

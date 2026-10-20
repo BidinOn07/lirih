@@ -61,7 +61,19 @@ class OnAudioQueryMediaStoreScanner implements MediaStoreScanner {
   Future<bool> hasPermission() => _serialize(_query.permissionsStatus);
 
   @override
-  Future<bool> requestPermission() => _serialize(_query.permissionsRequest);
+  Future<bool> requestPermission() => _serialize(() async {
+    // Bila result method channel ter-garbage collected saat dialog izin
+    // terbuka (ditambal di native menjadi no-op), plugin tidak pernah
+    // membalas. Timeout mencegah antrean [_serialize] menggantung selamanya
+    // — anggap saja izin ditolak dan biarkan pemanggil menangani kondisinya.
+    try {
+      return await _query.permissionsRequest().timeout(
+        const Duration(seconds: 30),
+      );
+    } on Exception {
+      return false;
+    }
+  });
 
   @override
   Future<List<SongModel>> querySongs() => _serialize(

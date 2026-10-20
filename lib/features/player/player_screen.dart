@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:lirih/core/constants/app_colors.dart';
+import 'package:lirih/core/constants/app_motion.dart';
 import 'package:lirih/core/utils/duration_format.dart';
 import 'package:lirih/core/utils/pitch_math.dart';
 import 'package:lirih/domain/entities/frequency_preset.dart';
@@ -14,7 +15,40 @@ import 'package:lirih/features/player/queue_sheet.dart';
 import 'package:lirih/features/player/repeat_mode.dart';
 import 'package:lirih/features/player/sleep_timer_controller.dart';
 import 'package:lirih/features/player/track_info_sheet.dart';
+import 'package:lirih/shared/widgets/switching_icon.dart';
 import 'package:lirih/shared/widgets/track_artwork.dart';
+
+/// Membuka layar Pemutar penuh dengan transisi **naik dari bawah**.
+///
+/// Pemutar adalah layar "sekarang diputar" khas aplikasi musik: alih-alih
+/// mendorong layar lama ke samping (bawaan Android), layar ini meluncur
+/// naik menutupi shell — terasa seperti mengambil lagu yang sedang berjalan
+/// keluar dari mini player. Lihat [AppMotion.route].
+void openPlayerScreen(BuildContext context) {
+  Navigator.of(context).push<void>(
+    PageRouteBuilder<void>(
+      transitionDuration: AppMotion.route,
+      reverseTransitionDuration: AppMotion.medium,
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const PlayerScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: AppMotion.easeOut,
+          reverseCurve: AppMotion.easeIn,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(curved),
+          // Pudar ringan agar batas atas layar tidak terasa "menyapu".
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
+    ),
+  );
+}
 
 /// Layar Pemutar (task 2.7) + **penyetel frekuensi** 440/432/528 Hz
 /// (task 2.8) — fitur pembeda Lirih.
@@ -43,10 +77,24 @@ class PlayerScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                if (ref.watch(lyricsVisibilityProvider))
-                  const AspectRatio(aspectRatio: 1, child: LyricsPanel())
-                else
-                  _AlbumArt(track: track),
+                // Silang-pudar antara sampul dan panel lirik — keduanya
+                // berbentuk persegi (rasio 1) sehingga tinggi ListView
+                // tidak melonjak saat bertukar.
+                AnimatedSwitcher(
+                  duration: AppMotion.medium,
+                  switchInCurve: AppMotion.easeOut,
+                  switchOutCurve: AppMotion.easeIn,
+                  child: ref.watch(lyricsVisibilityProvider)
+                      ? const AspectRatio(
+                          key: ValueKey('lyrics'),
+                          aspectRatio: 1,
+                          child: LyricsPanel(),
+                        )
+                      : _AlbumArt(
+                          key: ValueKey('artwork-${track.id}'),
+                          track: track,
+                        ),
+                ),
                 const SizedBox(height: 20),
                 _TrackMeta(track: track),
                 const SizedBox(height: 12),
@@ -119,8 +167,8 @@ class _FavoriteButton extends ConsumerWidget {
     return IconButton(
       tooltip: isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit',
       onPressed: () => notifier.toggle(track),
-      icon: Icon(
-        isFavorite ? Icons.favorite : Icons.favorite_border,
+      icon: SwitchingIcon(
+        icon: isFavorite ? Icons.favorite : Icons.favorite_border,
         color: isFavorite ? AppColors.kunir500 : AppColors.soga200,
         size: 22,
       ),
@@ -154,8 +202,8 @@ class _LyricsButton extends ConsumerWidget {
     return IconButton(
       tooltip: 'Lirik',
       onPressed: notifier.toggle,
-      icon: Icon(
-        visible ? Icons.lyrics : Icons.lyrics_outlined,
+      icon: SwitchingIcon(
+        icon: visible ? Icons.lyrics : Icons.lyrics_outlined,
         color: visible ? AppColors.nila400 : AppColors.soga200,
         size: 22,
       ),
@@ -210,7 +258,7 @@ class _SleepTimerButton extends ConsumerWidget {
 
 /// Sampul album trek aktif (task 3.4) — ukuran penuh sesuai lebar layar.
 class _AlbumArt extends StatelessWidget {
-  const _AlbumArt({required this.track});
+  const _AlbumArt({required this.track, super.key});
 
   final Track track;
 
@@ -233,28 +281,36 @@ class _TrackMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          track.title,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: AppColors.soga50,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
+    // Silang-pudar judul/artis saat lagu berganti — durasi & tinggi teks
+    // hampir selalu sama, jadi lonjakan tinggi saat transisi minim.
+    return AnimatedSwitcher(
+      duration: AppMotion.fast,
+      switchInCurve: AppMotion.easeOut,
+      switchOutCurve: AppMotion.easeIn,
+      child: Column(
+        key: ValueKey(track.id),
+        children: [
+          Text(
+            track.title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.soga50,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          track.artist,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: AppColors.soga300, fontSize: 15),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            track.artist,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppColors.soga300, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -327,7 +383,11 @@ class _Controls extends ConsumerWidget {
           ),
           child: IconButton(
             onPressed: notifier.togglePlay,
-            icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+            icon: SwitchingIcon(
+              icon: isPlaying ? Icons.pause : Icons.play_arrow,
+              color: AppColors.soga950,
+              size: 44,
+            ),
             color: AppColors.soga950,
             iconSize: 44,
           ),
@@ -381,7 +441,11 @@ class _RepeatButton extends ConsumerWidget {
 
     return IconButton(
       onPressed: notifier.toggleRepeat,
-      icon: Icon(mode == LoopMode.one ? Icons.repeat_one : Icons.repeat),
+      icon: SwitchingIcon(
+        icon: mode == LoopMode.one ? Icons.repeat_one : Icons.repeat,
+        color: active ? AppColors.kunir500 : AppColors.soga300,
+        size: 26,
+      ),
       color: active ? AppColors.kunir500 : AppColors.soga300,
       iconSize: 26,
       tooltip: mode == LoopMode.off
